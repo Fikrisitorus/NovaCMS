@@ -1,69 +1,277 @@
-# NovaCMS
+<div align="center">
 
-Selamat datang di repositori NovaCMS. Proyek ini menggunakan arsitektur monorepo yang berisi backend API, frontend website, dokumentasi, dan reusable packages.
+# 🚀 NovaCMS
 
-## 🌳 Git Workflow & Commit Guidelines
+### Modern Headless CMS & Visual Website Builder
 
-Untuk menjaga kerapian riwayat komit dan mencegah konflik kode, ikuti alur kerja berikut sebelum dan sesudah menulis kode:
+Build, manage, and publish modern websites through a flexible component-based architecture.
 
-### Alur Kerja (Workflow)
-1. Jalankan `git status` dan pastikan kamu berada di branch `dev` pribadi kamu, misalnya: `DEV_Nama`.
-2. Lakukan `git pull origin dev` (atau dari branch integrasi utama) sebelum mulai coding untuk mendapatkan perubahan terbaru.
-3. Setelah selesai coding, lakukan *pull* lagi dari branch `dev` utama untuk memastikan tidak ada konflik sebelum commit/push.
-4. Sebelum melakukan push, pastikan kamu sudah menjalankan *linter* atau *test* (misal: `php artisan test` untuk Laravel, atau `npm run lint` & `npm run build` untuk Frontend) dan pastikan tidak ada error.
-5. Ajukan **Pull Request (PR)** dari branch kamu (`DEV_Nama`) ke branch `dev`.
+> **Currently under active development.**
 
-### Format Commit (Conventional Commits)
-Pastikan setiap pesan commit mengikuti format *Conventional Commits* yang dikombinasikan dengan kode tiket tugas (misalnya dari Jira, Linear, atau Trello).
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=for-the-badge&logo=php)
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel)
+![Filament](https://img.shields.io/badge/Filament-v4-F59E0B?style=for-the-badge)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791?style=for-the-badge&logo=postgresql)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)
+![License](https://img.shields.io/github/license/Fikrisitorus/NovaCMS?style=for-the-badge)
 
-**Format:**
-`[KODE_TASK] | [tipe]([domain_opsional]): [kata kerja dan penjelasan perubahan]`
+</div>
 
-*(Catatan: Jika perubahan mencakup semua domain atau bersifat general, bagian `(domain)` bisa dikosongkan).*
+---
 
-**Tipe Commit yang Disarankan:**
-- `feat`: Menambahkan fitur baru.
-- `fix`: Memperbaiki bug.
-- `chore`: Perawatan rutin, update dependency, hal kecil yang tidak mengubah kode produksi.
-- `refactor`: Menulis ulang/merapikan kode tanpa mengubah perilakunya (optimasi).
-- `docs`: Perubahan khusus untuk dokumentasi (README, komentar).
+# 📖 Overview
 
-**Contoh Implementasi:**
-- `NOVA-17 | feat(api): membuat relasi pada model User dan Post`
-- `NOVA-18 | fix(website): memperbaiki padding tombol login di layar mobile`
-- `NOVA-19 | chore: update library tailwindcss ke versi terbaru`
-- `NOVA-20 | docs(api): menambahkan dokumentasi swagger untuk auth`
+NovaCMS is a modern **Headless CMS** designed to simplify website management using a modular, component-driven architecture.
 
-## 📐 Global Code Style & Guidelines
+Unlike traditional CMS platforms, NovaCMS separates content management from frontend rendering, allowing developers to build websites with complete flexibility while giving content editors an intuitive administration experience.
 
-Semua kontributor **wajib** mematuhi standar penulisan kode berikut agar proyek tetap rapi, mudah dibaca, dan mudah di-maintenance.
+This project is built with scalability, maintainability, and developer experience in mind.
 
-### 1. Prinsip Utama (Core Principles)
-- **Clean Code**: Gunakan penamaan variabel/fungsi yang deskriptif dan struktur kode yang rapi.
-- **KISS (Keep It Simple, Stupid)**: Hindari membuat solusi yang terlalu rumit jika ada cara yang lebih sederhana.
-- **DRY (Don't Repeat Yourself)**: Hindari duplikasi. Ekstrak logic yang berulang menjadi fungsi, komponen, atau package terpisah.
-- **YAGNI (You Aren't Gonna Need It)**: Jangan menulis kode untuk fitur yang belum benar-benar dibutuhkan saat ini.
+---
 
-### 2. Komentar (Comments)
-- Tulis kode yang bisa menjelaskan dirinya sendiri (self-documenting).
-- Tambahkan **komentar singkat/panjang yang jelas** untuk logic yang kompleks, algoritma rumit, atau business logic tertentu.
+# ✨ Features
 
-### 3. Jarak Spasi dan Import (Spacing & Imports)
-- Beri jarak **1 baris kosong** antara area import third-party/package dan area import local file.
-- Beri jarak **2 baris kosong** antara area import secara keseluruhan dengan area kode utama.
+## Core CMS
 
-**Contoh:**
-```javascript
-import React from "react"; // ini area import instalasi/third party file/package
-// beri 1 baris kosong
-import API_URL from "../constant"; // ini area import lokal file
-// beri 2 baris kosong
-// beri 2 baris kosong
-const a = 1; // ini area code
-export default function A() { // ini area code juga
-    // ...
-}
+- Website Management
+- Multi Page Management
+- Dynamic Sections
+- Blog System
+- Media Library
+- SEO Management
+- Draft & Publish
+- Version History
+
+## Content Builder
+
+- Hero Section
+- Feature Section
+- Gallery
+- FAQ
+- Pricing
+- CTA
+- Team
+- Contact Form
+- Custom Components
+
+## Administration
+
+- Authentication
+- Role & Permission
+- User Management
+- Activity Log
+- Dashboard Analytics
+
+## Developer Experience
+
+- REST API
+- Docker Ready
+- Queue
+- Cache
+- Search
+- CI/CD
+- Modular Architecture
+- Clean Architecture
+- Domain Driven Design
+
+---
+
+# 🏗 Project Structure
+
+```text
+NovaCMS
+│
+├── apps
+│   ├── api
+│   └── website
+│
+├── packages
+│
+├── docs
+│
+├── docker
+│
+├── design
+│
+├── scripts
+│
+└── .github
 ```
 
 ---
-Silakan merujuk ke folder `docs/`, `apps/`, dan `packages/` untuk melihat detail spesifik tiap bagian.
+
+# 🏛 Architecture
+
+NovaCMS follows several modern software architecture principles.
+
+- Modular Monolith
+- Domain Driven Design (DDD)
+- Clean Architecture
+- Repository Pattern
+- SOLID Principles
+- Event Driven Design
+
+---
+
+# 🛠 Technology Stack
+
+## Backend
+
+- Laravel 12
+- PHP 8.4
+- PostgreSQL
+- Redis
+
+## Admin Panel
+
+- Filament v4
+
+## Frontend
+
+- Blade
+- Livewire
+- TailwindCSS
+- Alpine.js
+
+## Infrastructure
+
+- Docker
+- Nginx
+- MinIO
+- Mailpit
+- Meilisearch
+
+---
+
+# 📁 Repository Layout
+
+```text
+apps/
+    api/
+    website/
+
+packages/
+docs/
+docker/
+design/
+scripts/
+```
+
+---
+
+# 🚀 Getting Started
+
+Clone repository
+
+```bash
+git clone https://github.com/Fikrisitorus/NovaCMS.git
+```
+
+Move into project
+
+```bash
+cd NovaCMS
+```
+
+Start Docker
+
+```bash
+docker compose up -d
+```
+
+Install dependencies
+
+```bash
+composer install
+```
+
+Generate application key
+
+```bash
+php artisan key:generate
+```
+
+Run migration
+
+```bash
+php artisan migrate
+```
+
+Run development server
+
+```bash
+php artisan serve
+```
+
+---
+
+# 📚 Documentation
+
+Documentation is available inside the `docs` directory.
+
+- Product Requirement
+- Architecture
+- API Specification
+- Database Design
+- Deployment Guide
+- Development Roadmap
+
+---
+
+# 🗺 Roadmap
+
+## Phase 1
+
+- Authentication
+- User Management
+- Role & Permission
+
+## Phase 2
+
+- Website
+- Pages
+- Sections
+
+## Phase 3
+
+- Media Library
+- Blog
+- SEO
+
+## Phase 4
+
+- API
+- Search
+- Queue
+
+## Phase 5
+
+- Visual Builder
+- Plugin System
+
+## Phase 6
+
+- Multi Tenant
+- Marketplace
+
+---
+
+# 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome.
+
+Please read the [contribution guidelines](CONTRIBUTING.md) before submitting a pull request.
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+<div align="center">
+
+Made with ❤️ using Laravel
+
+</div>
