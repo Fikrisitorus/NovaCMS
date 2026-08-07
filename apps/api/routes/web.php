@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+use App\Models\Post;
+
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes - NovaCMS Public Frontend
+|--------------------------------------------------------------------------
+|
+| Route untuk halaman publik yang bisa diakses oleh pengunjung website.
+| Admin panel Filament sudah memiliki route tersendiri di /admin.
+|
+*/
+
+// Homepage
+Route::get('/', function () {
+    return view('home');
+})->name('home');
+
+// Blog listing - menampilkan post yang sudah dipublikasikan
+Route::get('/blog', function () {
+    $posts = Post::whereNotNull('published_at')
+        ->orderBy('published_at', 'desc')
+        ->get();
+
+    return view('blog.index', compact('posts'));
+})->name('blog.index');
+
+// Blog detail - menampilkan post berdasarkan slug
+Route::get('/blog/{slug}', function (string $slug) {
+    $post = Post::where('slug', $slug)
+        ->whereNotNull('published_at')
+        ->firstOrFail();
+
+    return view('blog.show', compact('post'));
+})->name('blog.show');
