@@ -45,6 +45,9 @@ class WebsiteResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('domain')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('pages_count')
+                    ->counts('pages')
+                    ->label('Jumlah Halaman'),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -68,7 +71,7 @@ class WebsiteResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\PagesRelationManager::class,
         ];
     }
 
