@@ -27,18 +27,84 @@ class PageResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('website_id')
-                    ->relationship('website', 'name')
-                    ->required(),
-                Forms\Components\TextInput::make('title')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('slug')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Toggle::make('is_published')
-                    ->default(false),
-            ]);
+                Forms\Components\Group::make([
+                    Forms\Components\Section::make('Page Settings')
+                        ->schema([
+                            Forms\Components\Select::make('website_id')
+                                ->relationship('website', 'name')
+                                ->required(),
+                            Forms\Components\TextInput::make('title')
+                                ->required()
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn (\Filament\Forms\Set $set, ?string $state) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                            Forms\Components\TextInput::make('slug')
+                                ->required()
+                                ->maxLength(255)
+                                ->unique(ignoreRecord: true),
+                            Forms\Components\Toggle::make('is_published')
+                                ->default(false),
+                        ]),
+                ])->columnSpan(['lg' => 1]),
+
+                Forms\Components\Group::make([
+                    Forms\Components\Section::make('Content')
+                        ->schema([
+                            Forms\Components\Builder::make('blocks')
+                                ->blocks([
+                                    Forms\Components\Builder\Block::make('hero')
+                                        ->label('Hero Section')
+                                        ->icon('heroicon-m-sparkles')
+                                        ->schema([
+                                            Forms\Components\TextInput::make('heading')->required(),
+                                            Forms\Components\Textarea::make('subheading'),
+                                            Forms\Components\TextInput::make('button_label'),
+                                            Forms\Components\TextInput::make('button_url')->url(),
+                                            Forms\Components\FileUpload::make('background_image')->image()->directory('hero'),
+                                        ]),
+                                    Forms\Components\Builder\Block::make('faq')
+                                        ->label('FAQ Section')
+                                        ->icon('heroicon-m-question-mark-circle')
+                                        ->schema([
+                                            Forms\Components\Repeater::make('questions')
+                                                ->schema([
+                                                    Forms\Components\TextInput::make('question')->required(),
+                                                    Forms\Components\Textarea::make('answer')->required(),
+                                                ]),
+                                        ]),
+                                    Forms\Components\Builder\Block::make('gallery')
+                                        ->label('Image Gallery')
+                                        ->icon('heroicon-m-photo')
+                                        ->schema([
+                                            Forms\Components\FileUpload::make('images')
+                                                ->image()
+                                                ->multiple()
+                                                ->directory('gallery'),
+                                        ]),
+                                    Forms\Components\Builder\Block::make('pricing')
+                                        ->label('Pricing Section')
+                                        ->icon('heroicon-m-currency-dollar')
+                                        ->schema([
+                                            Forms\Components\Repeater::make('plans')
+                                                ->schema([
+                                                    Forms\Components\TextInput::make('name')->required(),
+                                                    Forms\Components\TextInput::make('price')->numeric()->required(),
+                                                    Forms\Components\TagsInput::make('features'),
+                                                ]),
+                                        ]),
+                                    Forms\Components\Builder\Block::make('contact')
+                                        ->label('Contact Form')
+                                        ->icon('heroicon-m-envelope')
+                                        ->schema([
+                                            Forms\Components\TextInput::make('recipient_email')->email()->required(),
+                                            Forms\Components\Textarea::make('description'),
+                                        ]),
+                                ])
+                                ->collapsible(),
+                        ]),
+                ])->columnSpan(['lg' => 2]),
+            ])
+            ->columns(3);
     }
 
     public static function table(Table $table): Table
@@ -75,7 +141,7 @@ class PageResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SectionsRelationManager::class,
+            //
         ];
     }
 
