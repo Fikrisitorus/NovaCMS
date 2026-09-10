@@ -17,7 +17,15 @@ class Page extends Model
         'title',
         'slug',
         'is_published',
+        'blocks',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'blocks' => 'array',
+        ];
+    }
 
     /**
      * Get the website that owns the page.
@@ -25,13 +33,5 @@ class Page extends Model
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
-    }
-
-    /**
-     * Get the sections for the page.
-     */
-    public function sections(): HasMany
-    {
-        return $this->hasMany(PageSection::class);
     }
 }
