@@ -4,14 +4,13 @@ namespace App\Filament\Resources;
 
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 
 use App\Filament\Resources\PageResource\Pages;
-use App\Filament\Resources\PageResource\RelationManagers;
 use App\Models\Page;
 
 
@@ -37,7 +36,7 @@ class PageResource extends Resource
                                 ->required()
                                 ->maxLength(255)
                                 ->live(onBlur: true)
-                                ->afterStateUpdated(fn (\Filament\Forms\Set $set, ?string $state) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
                             Forms\Components\TextInput::make('slug')
                                 ->required()
                                 ->maxLength(255)
@@ -45,6 +44,26 @@ class PageResource extends Resource
                             Forms\Components\Toggle::make('is_published')
                                 ->default(false),
                         ]),
+
+                    Forms\Components\Section::make('SEO')
+                        ->schema([
+                            Forms\Components\TextInput::make('seoMeta.meta_title')
+                                ->label('Meta Title')
+                                ->maxLength(60),
+                            Forms\Components\Textarea::make('seoMeta.meta_description')
+                                ->label('Meta Description')
+                                ->maxLength(160),
+                            Forms\Components\TagsInput::make('seoMeta.meta_keywords')
+                                ->label('Meta Keywords'),
+                            Forms\Components\FileUpload::make('seoMeta.og_image')
+                                ->label('OG Image')
+                                ->image()
+                                ->directory('seo'),
+                            Forms\Components\TextInput::make('seoMeta.canonical_url')
+                                ->label('Canonical URL')
+                                ->url(),
+                        ])
+                        ->collapsed(),
                 ])->columnSpan(['lg' => 1]),
 
                 Forms\Components\Group::make([
