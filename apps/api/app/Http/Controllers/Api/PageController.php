@@ -35,16 +35,17 @@ class PageController extends Controller
     }
 
     /**
-     * Menampilkan detail halaman berdasarkan slug,
-     * beserta semua section yang terurut berdasarkan field 'order'.
+     * Menampilkan detail halaman berdasarkan slug.
+     *
+     * Relasi 'sections' dan tabel page_sections sudah dihapus oleh migrasi
+     * 2026_09_10_094631_modify_pages_and_drop_page_sections; konten halaman
+     * kini disimpan pada kolom JSON 'blocks'.
      */
     public function showBySlug(string $slug)
     {
         $page = Page::where('slug', $slug)
             ->where('is_published', true)
-            ->with(['website', 'sections' => function ($query) {
-                $query->orderBy('order');
-            }])
+            ->with('website')
             ->firstOrFail();
 
         return new PageResource($page);

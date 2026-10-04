@@ -8,7 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Transformer untuk data Page.
- * Menyertakan data website induk dan daftar sections jika di-load.
+ * Menyertakan data website induk dan konten halaman pada kolom 'blocks'.
  */
 class PageResource extends JsonResource
 {
@@ -20,8 +20,8 @@ class PageResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'is_published' => $this->is_published,
+            'blocks' => $this->blocks,
             'website' => new WebsiteResource($this->whenLoaded('website')),
-            'sections' => PageSectionResource::collection($this->whenLoaded('sections')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
