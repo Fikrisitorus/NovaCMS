@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 
-
 /**
  * Controller untuk endpoint publik Post (Blog).
- * Hanya menampilkan post yang sudah dipublikasikan (published_at tidak null).
+ * Hanya menampilkan post yang sudah dipublikasikan: is_published true dan
+ * published_at sudah lewat (mendukung penjadwalan posting).
  */
 class PostController extends Controller
 {
@@ -21,7 +19,8 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::whereNotNull('published_at')
+        $posts = Post::where('is_published', true)
+            ->where('published_at', '<=', now())
             ->orderBy('published_at', 'desc')
             ->get();
 
@@ -34,7 +33,8 @@ class PostController extends Controller
     public function showBySlug(string $slug)
     {
         $post = Post::where('slug', $slug)
-            ->whereNotNull('published_at')
+            ->where('is_published', true)
+            ->where('published_at', '<=', now())
             ->firstOrFail();
 
         return new PostResource($post);

@@ -5,7 +5,6 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-
 /**
  * Transformer untuk data Website.
  * Mengubah model Website menjadi format JSON yang konsisten untuk respons API.
