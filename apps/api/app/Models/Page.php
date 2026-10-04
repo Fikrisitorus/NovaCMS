@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-
 
 class Page extends Model
 {
-    use HasUuids;
+    use HasSeo, HasUuids;
 
     protected $fillable = [
         'website_id',
@@ -20,6 +19,11 @@ class Page extends Model
         'blocks',
     ];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

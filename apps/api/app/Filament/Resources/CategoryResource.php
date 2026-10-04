@@ -2,20 +2,23 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\WebsiteResource\Pages;
-use App\Filament\Resources\WebsiteResource\RelationManagers;
-use App\Models\Website;
+use App\Filament\Resources\CategoryResource\Pages;
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
-class WebsiteResource extends Resource
+class CategoryResource extends Resource
 {
-    protected static ?string $model = Website::class;
+    protected static ?string $model = Category::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
+
+    protected static ?string $navigationGroup = 'Blog';
 
     public static function form(Form $form): Form
     {
@@ -23,13 +26,13 @@ class WebsiteResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('domain')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                Forms\Components\TextInput::make('slug')
                     ->required()
-                    ->unique(ignoreRecord: true)
-                    ->maxLength(255),
-                Forms\Components\Toggle::make('is_active')
-                    ->default(true),
+                    ->unique(ignoreRecord: true),
+                Forms\Components\Textarea::make('description')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -38,14 +41,13 @@ class WebsiteResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('slug')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('domain')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('pages_count')
-                    ->counts('pages')
-                    ->label('Jumlah Halaman'),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
+                Tables\Columns\TextColumn::make('posts_count')
+                    ->counts('posts')
+                    ->label('Jumlah Post'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -67,16 +69,16 @@ class WebsiteResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\PagesRelationManager::class,
+            //
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListWebsites::route('/'),
-            'create' => Pages\CreateWebsite::route('/create'),
-            'edit' => Pages\EditWebsite::route('/{record}/edit'),
+            'index' => Pages\ListCategories::route('/'),
+            'create' => Pages\CreateCategory::route('/create'),
+            'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 }

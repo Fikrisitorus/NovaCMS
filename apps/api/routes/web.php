@@ -1,9 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
 use App\Models\Post;
-
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +20,8 @@ Route::get('/', function () {
 
 // Blog listing - menampilkan post yang sudah dipublikasikan
 Route::get('/blog', function () {
-    $posts = Post::whereNotNull('published_at')
+    $posts = Post::where('is_published', true)
+        ->where('published_at', '<=', now())
         ->orderBy('published_at', 'desc')
         ->get();
 
@@ -32,7 +31,8 @@ Route::get('/blog', function () {
 // Blog detail - menampilkan post berdasarkan slug
 Route::get('/blog/{slug}', function (string $slug) {
     $post = Post::where('slug', $slug)
-        ->whereNotNull('published_at')
+        ->where('is_published', true)
+        ->where('published_at', '<=', now())
         ->firstOrFail();
 
     return view('blog.show', compact('post'));
