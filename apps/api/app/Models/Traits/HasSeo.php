@@ -3,9 +3,7 @@
 namespace App\Models\Traits;
 
 use App\Models\SeoMeta;
-
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-
 
 /**
  * Trait HasSeo

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\CategoryResource\Pages;
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -9,10 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Models\Category;
-
 
 class CategoryResource extends Resource
 {

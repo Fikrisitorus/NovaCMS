@@ -2,15 +2,13 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\MediaResource\Pages;
+use App\Models\Media;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-
-use App\Filament\Resources\MediaResource\Pages;
-use App\Models\Media;
-
 
 class MediaResource extends Resource
 {
@@ -65,7 +63,7 @@ class MediaResource extends Resource
                 Tables\Columns\TextColumn::make('mime_type')
                     ->badge(),
                 Tables\Columns\TextColumn::make('size')
-                    ->formatStateUsing(fn (int $state): string => number_format($state / 1024, 1) . ' KB')
+                    ->formatStateUsing(fn (int $state): string => number_format($state / 1024, 1).' KB')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

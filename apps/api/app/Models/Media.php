@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-
 class Media extends Model
 {
     use HasUuids;
@@ -26,6 +25,6 @@ class Media extends Model
      */
     public function getUrlAttribute(): string
     {
-        return asset('storage/' . $this->path);
+        return asset('storage/'.$this->path);
     }
 }

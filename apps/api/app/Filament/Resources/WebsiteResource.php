@@ -2,18 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\WebsiteResource\Pages;
+use App\Filament\Resources\WebsiteResource\RelationManagers;
+use App\Models\Website;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use App\Filament\Resources\WebsiteResource\Pages;
-use App\Filament\Resources\WebsiteResource\RelationManagers;
-use App\Models\Website;
-
 
 class WebsiteResource extends Resource
 {

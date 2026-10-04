@@ -5,7 +5,6 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-
 /**
  * Transformer untuk data Page.
  * Menyertakan data website induk dan konten halaman pada kolom 'blocks'.

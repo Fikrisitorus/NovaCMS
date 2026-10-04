@@ -5,7 +5,6 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-
 /**
  * Transformer untuk data Post (Blog).
  * Menyertakan field published_at yang diformat sebagai ISO 8601.

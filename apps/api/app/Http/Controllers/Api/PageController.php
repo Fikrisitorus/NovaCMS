@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
 use App\Http\Resources\PageResource;
 use App\Models\Page;
-
+use Illuminate\Http\Request;
 
 /**
  * Controller untuk endpoint publik Page.

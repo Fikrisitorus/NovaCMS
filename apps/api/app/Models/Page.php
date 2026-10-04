@@ -2,16 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-use App\Models\Traits\HasSeo;
-
-
 class Page extends Model
 {
-    use HasUuids, HasSeo;
+    use HasSeo, HasUuids;
 
     protected $fillable = [
         'website_id',

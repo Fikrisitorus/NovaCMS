@@ -2,20 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HtmlSanitizerCast;
+use App\Models\Concerns\SanitizesHtml;
+use App\Models\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
-use App\Models\Concerns\HtmlSanitizerCast;
-use App\Models\Concerns\SanitizesHtml;
-use App\Models\Traits\HasSeo;
-
-
 class Post extends Model
 {
-    use HasUuids, HasSeo, SanitizesHtml;
+    use HasSeo, HasUuids, SanitizesHtml;
 
     protected $fillable = [
         'website_id',

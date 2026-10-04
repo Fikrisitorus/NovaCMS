@@ -1,11 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\Api\WebsiteController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\PostController;
-
+use App\Http\Controllers\Api\WebsiteController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------

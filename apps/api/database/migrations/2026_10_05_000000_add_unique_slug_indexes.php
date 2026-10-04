@@ -76,11 +76,11 @@ return new class extends Migration
             // Lewati record pertama; sisanya diberi suffix -2, -3, ...
             foreach ($ids->slice(1)->values() as $index => $id) {
                 $suffix = $index + 2;
-                $newSlug = $slug . '-' . $suffix;
+                $newSlug = $slug.'-'.$suffix;
 
                 while (DB::table($table)->where('slug', $newSlug)->exists()) {
                     $suffix++;
-                    $newSlug = $slug . '-' . $suffix;
+                    $newSlug = $slug.'-'.$suffix;
                 }
 
                 DB::table($table)

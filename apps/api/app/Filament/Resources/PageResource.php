@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\PageResource\Pages;
+use App\Models\Page;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -9,10 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
-
-use App\Filament\Resources\PageResource\Pages;
-use App\Models\Page;
-
 
 class PageResource extends Resource
 {
