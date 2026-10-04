@@ -1,0 +1,116 @@
+# NovaCMS — Docker Compose
+#
+# Monorepo layout: source code berada di apps/api, sehingga semua service
+# di bawah memakai working_dir /apps/api. Jalankan dengan:
+#
+#     docker compose up -d
+#
+# Service:
+#   api       Laravel + Filament admin (PHP 8.4) + nginx, port 8000
+#   pg        PostgreSQL 17 (bawaan produksi NovaCMS), port 5432
+#   redis     Redis (cache/queue), port 6379
+#   mailpit   Mailpit (mail catcher), port 8025 (web) / 1025 (SMTP)
+#   minio     S3-compatible object storage untuk media library, port 9000/9001
+#
+# Service pertama menjalankan migration secara otomatis. Setelah selesai,
+# akses http://localhost:8000 dan admin panel di /admin.
+#
+# PERHATIAN: butuh infrastructure/docker/api/Dockerfile yang belum tersedia.
+# Lihat catatan di bagian bawah file ini sebelum menjalankan.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api/Dockerfile
+    container_name: novacms-api
+    working_dir: /var/www/html/apps/api
+    volumes:
+      - ./:/var/www/html
+      - novacms-vendor:/var/www/html/apps/api/vendor
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: pg
+      DB_PORT: 5432
+      DB_DATABASE: novacms
+      DB_USERNAME: novacms
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      FILESYSTEM_DISK: s3
+      AWS_ENDPOINT: http://minio:9000
+      AWS_BUCKET: novacms-media
+      AWS_ACCESS_KEY_ID: novacms
+      AWS_SECRET_ACCESS_KEY: novacmssecret
+      AWS_USE_PATH_STYLE_ENDPOINT: true
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+    command: >
+      sh -c "
+      composer install --no-interaction --no-progress &&
+      php artisan migrate --force &&
+      php artisan storage:link &&
+      php artisan serve --host=0.0.0.0 --port=8000
+      "
+
+  pg:
+    image: postgres:17-alpine
+    container_name: novacms-pg
+    environment:
+      POSTGRES_DB: novacms
+      POSTGRES_USER: novacms
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - novacms-pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novacms -d novacms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: novacms-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - novacms-redis:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: novacms-mailpit
+    ports:
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+
+  minio:
+    image: minio/minio:latest
+    container_name: novacms-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: novacms
+      MINIO_ROOT_PASSWORD: novacmssecret
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - novacms-minio:/data
+
+volumes:
+  novacms-pgdata:
+  novacms-redis:
+  novacms-minio:
+  novacms-vendor:

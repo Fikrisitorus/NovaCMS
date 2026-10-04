@@ -1,0 +1,52 @@
+# NovaCMS — dependencies & artifacts
+
+# Laravel / PHP (apps/api)
+apps/api/vendor/
+apps/api/composer.lock
+apps/api/.phpunit.result.cache
+apps/api/.phpunit.cache/
+apps/api/.env
+apps/api/.env.*
+!apps/api/.env.example
+apps/api/auth.json
+
+# Node (apps/api)
+apps/api/node_modules/
+apps/api/npm-debug.log
+apps/api/yarn-error.log
+apps/api/public/build/
+apps/api/public/hot
+
+# Build output & caches
+*.log
+.DS_Store
+Thumbs.db
+._*
+__pycache__/
+*.tsbuildinfo
+.cache/
+
+# Editor & IDE
+.idea/
+.vscode/
+.cursor/
+.nova/
+.zed/
+.codex/
+.fleet/
+*.swp
+*.swo
+
+# Vagrant / Homestead
+Homestead.json
+Homestead.yaml
+
+# Docker runtime data (local overrides)
+.docker/
+*.local
+
+# Project specifics
+apps/api/storage/**/*.key
+apps/api/storage/pail
+packages/*/vendor/
+packages/*/node_modules/
