@@ -38,6 +38,10 @@
                         prose-code:text-fuchsia-300 prose-code:bg-white/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md
                         prose-blockquote:border-violet-500/50 prose-blockquote:text-slate-400
                         prose-li:text-slate-300">
+                {{-- The content is purified on save by the SanitizesHtml trait and
+                     re-sanitized on read by the HtmlSanitizerCast, so this can be
+                     rendered as raw HTML. Never output untrusted rich text without
+                     one of those layers in place. --}}
                 {!! $post->content !!}
             </div>
 

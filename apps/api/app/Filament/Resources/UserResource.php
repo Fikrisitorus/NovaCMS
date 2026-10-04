@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UserResource extends Resource
@@ -28,10 +29,42 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->required(),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->required(),
+                    ->revealable()
+                    // The model hashes the password via its 'hashed' cast, so
+                    // this field must hand the plain text through unchanged.
+                    ->dehydrateStateUsing(fn (?string $state): ?string => $state)
+                    // Required when creating a user, optional when editing one:
+                    // an empty submit on the edit page must not wipe the stored
+                    // hash. Only persist the attribute when the admin actually
+                    // typed a new value.
+                    ->required(fn (string $operation): bool => $operation === 'create')
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->placeholder(fn (string $operation): string => $operation === 'edit' ? 'Leave blank to keep the current password' : '')
+                    ->visibleOn(['create', 'edit']),
+
+                // Replaces the raw DateTimePicker on email_verified_at, which
+                // let an admin silently bypass email verification by picking a
+                // date. Read-only status + an explicit confirmed action instead.
+                Forms\Components\Placeholder::make('email_verified_at')
+                    ->label('Email verified')
+                    ->visibleOn(['edit'])
+                    ->content(function (Model $record): string {
+                        return $record->email_verified_at?->format('d M Y H:i') ?? 'Not verified';
+                    }),
+                Forms\Components\Actions::make([
+                    Forms\Components\Actions\Action::make('mark_email_verified')
+                        ->label('Mark email as verified')
+                        ->color('gray')
+                        ->visibleOn(['edit'])
+                        ->visible(fn (Model $record): bool => $record->email_verified_at === null)
+                        ->requiresConfirmation()
+                        ->action(function (Model $record, Forms\Set $set): void {
+                            $record->forceFill(['email_verified_at' => now()])->save();
+                            $set('email_verified_at', now()->format('Y-m-d\TH:i'));
+                        }),
+                ]),
             ]);
     }
 

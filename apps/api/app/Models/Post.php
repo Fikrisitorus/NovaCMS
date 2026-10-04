@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
+use App\Models\Concerns\HtmlSanitizerCast;
+use App\Models\Concerns\SanitizesHtml;
 use App\Models\Traits\HasSeo;
 
 
 class Post extends Model
 {
-    use HasUuids, HasSeo;
+    use HasUuids, HasSeo, SanitizesHtml;
 
     protected $fillable = [
         'website_id',
@@ -37,6 +39,7 @@ class Post extends Model
         return [
             'published_at' => 'datetime',
             'is_published' => 'boolean',
+            'content' => HtmlSanitizerCast::class,
         ];
     }
 
