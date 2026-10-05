@@ -6,7 +6,6 @@ LABEL maintainer="Fikri Sitorus"
 WORKDIR /var/www/html
 
 RUN apk add --no-cache \
-        nginx \
         git \
         curl \
         zip \
@@ -14,13 +13,23 @@ RUN apk add --no-cache \
         libzip-dev \
         libpng-dev \
         libjpeg-turbo-dev \
-        libfreetype-dev \
+        freetype-dev \
         libpq-dev \
         oniguruma-dev \
+        icu-dev \
+        libsodium-dev \
+        libxml2-dev \
+        linux-headers \
+        autoconf \
+        gcc \
+        g++ \
+        make \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo pdo_pgsql pdo_mysql \
-        gd zip bcmath opcache pcntl \
+        gd zip bcmath opcache pcntl intl \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && rm -rf /var/cache/apk/*
 
