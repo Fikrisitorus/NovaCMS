@@ -1,13 +1,22 @@
 {{--
     Block tipe "faq": daftar pertanyaan dengan accordion (Alpine.js).
     Data: { questions: [{ question, answer }] }
---}}
-<section class="max-w-3xl mx-auto px-4 py-16 sm:px-6 lg:px-8" x-data="{ open: null }">
-    <h2 class="text-3xl font-bold text-center mb-10">Pertanyaan yang Sering Diajukan</h2>
 
-    @if (! empty($data['questions']))
+    Mendukung juga key legacy "items" dari data API versi sebelumnya
+    agar blok lama yang belum direvisi editornya tetap ter-render.
+--}}
+@php
+    $questions = $data['questions'] ?? $data['items'] ?? [];
+@endphp
+
+<section class="max-w-3xl mx-auto px-4 py-16 sm:px-6 lg:px-8" x-data="{ open: null }">
+    <h2 class="text-3xl font-bold text-center mb-10">
+        {{ ! empty($data['heading']) ? $data['heading'] : 'Pertanyaan yang Sering Diajukan' }}
+    </h2>
+
+    @if (! empty($questions))
         <div class="space-y-3">
-            @foreach ($data['questions'] as $index => $item)
+            @foreach ($questions as $index => $item)
                 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
                     <button
                         type="button"
