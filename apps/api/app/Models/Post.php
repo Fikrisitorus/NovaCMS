@@ -6,6 +6,7 @@ use App\Models\Concerns\HtmlSanitizerCast;
 use App\Models\Concerns\SanitizesHtml;
 use App\Models\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,7 @@ use Illuminate\Support\Str;
 
 class Post extends Model
 {
-    use HasSeo, HasUuids, SanitizesHtml;
+    use HasFactory, HasSeo, HasUuids, SanitizesHtml;
 
     protected $fillable = [
         'website_id',
@@ -49,10 +50,21 @@ class Post extends Model
         parent::boot();
 
         static::creating(function (Post $post) {
-            if (empty($post->slug)) {
+            if (filled($post->title) && empty($post->slug)) {
                 $post->slug = Str::slug($post->title);
             }
         });
+    }
+
+    /**
+     * Scope: hanya post yang sudah terbit (is_published true dan
+     * published_at sudah lewat). Dipakai oleh endpoint publik agar
+     * rule filter tunggal — index, detail, maupun relasi kategori.
+     */
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true)
+            ->where('published_at', '<=', now());
     }
 
     /**

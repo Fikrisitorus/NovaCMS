@@ -16,13 +16,15 @@ class PostController extends Controller
     /**
      * Menampilkan daftar post yang sudah dipublikasikan,
      * diurutkan berdasarkan tanggal publikasi terbaru.
+     * Mendukung pagination melalui query parameter ?page=N.
      */
     public function index()
     {
         $posts = Post::where('is_published', true)
             ->where('published_at', '<=', now())
+            ->with(['author', 'categories', 'seoMeta'])
             ->orderBy('published_at', 'desc')
-            ->get();
+            ->paginate(15);
 
         return PostResource::collection($posts);
     }
@@ -35,6 +37,7 @@ class PostController extends Controller
         $post = Post::where('slug', $slug)
             ->where('is_published', true)
             ->where('published_at', '<=', now())
+            ->with(['author', 'categories', 'seoMeta'])
             ->firstOrFail();
 
         return new PostResource($post);
