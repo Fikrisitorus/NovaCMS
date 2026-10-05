@@ -185,7 +185,7 @@ Tidak ada `created_at`/`updated_at` (pivot murni tanpa *timestamp*).
 | `created_at` | `timestamp`      | NOT NULL                   | Waktu dibuat.                                       |
 | `updated_at` | `timestamp`      | NOT NULL                   | Waktu diubah.                                       |
 
-**Relasi:** tidak ada foreign key. Path media hanya disimpan sebagai string pada kolom `path` (mis. di `blocks` tipe `gallery` atau `posts.featured_image`). Akses URL: `Media::getUrlAttribute()` → `asset('storage/'.$path)`.
+**Relasi:** tidak ada foreign key. Path media hanya disimpan sebagai string pada kolom `path` (mis. di `blocks` tipe `gallery` atau `posts.featured_image`). Akses URL: `Media::getUrlAttribute()` → `Storage::disk($this->disk)->url($this->path)` (menghormati kolom `disk` per baris, bukan hard-code `asset('storage/...')`).
 
 ---
 
