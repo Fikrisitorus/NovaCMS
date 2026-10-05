@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class Category extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     protected $fillable = [
         'name',
@@ -25,7 +26,7 @@ class Category extends Model
         parent::boot();
 
         static::creating(function (Category $category) {
-            if (empty($category->slug)) {
+            if (empty($category->slug) && filled($category->name)) {
                 $category->slug = Str::slug($category->name);
             }
         });
