@@ -82,7 +82,7 @@ Roadmap diambil dari [README](../../README.md#-roadmap) proyek dan di-cross-chec
 | API — internal/admin     | ⬜     | Belum ada endpoint tulis (create/update/delete) terpisah; manipulasi data hanya lewat Filament. |
 | Search                  | ⬜     | Belum ada. Meilisearch/`scout` tidak ada di `composer.json` maupun `docker-compose.yml`; pencarian hanya `searchable()` di kolom tabel Filament. |
 | Queue                   | 🟡     | Redis & `QUEUE_CONNECTION=redis` terkonfigurasi; tabel `jobs`/`job_batches`/`failed_jobs` ada. **Belum ada job/job dispatch apapun** yang ditulis. |
-| Cache                   | 🟡     | Redis & `CACHE_STORE=redis` terkonfigurasi. **Endpoint publik belum memakai `Cache::remember`/ETag.** |
+| Cache                 | 🟡     | Redis terkonfigurasi, `CACHE_STORE=database`. Endpoint post sudah memakai `Cache::remember` 15 menit + invalidasi via `PostObserver` (commit `702f172`); `GET /pages`, `/categories`, `/media` belum. |
 | Version History         | ⬜     | Tidak ada skema versi/*revision* pada Page/Post. |
 | Activity Log            | ⬜     | Tidak ada. |
 
@@ -132,10 +132,10 @@ Phase 1 (auth/RBAC) ──┬──▶ Phase 2 (website/pages)
 Urutan rekomendasi dengan mempertimbangkan *dependency* & dampak:
 
 1. ~~**Ekspos field post & SEO di API publik**~~ — ✅ **Selesai** (`7633b75`): `PostResource` + `PageResource` sekarang menampilkan `featured_image`, `excerpt`, `categories`, `author`, dan `seoMeta`.
-2. ~~**Paginasi + caching API**~~ — 🟡 **Paginasi selesai** (`7633b75`); *caching* (`Cache::remember`/ETag) masih belum.
+2. ~~**Paginasi API**~~ — ✅ **Selesai** (`7633b75`). *Caching* sebagian: `GET /posts` & `GET /posts/{slug}` sudah `Cache::remember` 15 menit + invalidasi via `PostObserver` (`702f172`); `GET /pages`, `/categories`, `/media` belum.
 3. **Pencarian (Meilisearch/Scout)** — aktifkan Phase 4; gunakan untuk blog & media.
 4. **Version history** pada Page/Post — fitur yang dijanjikan README sejak Phase 2.
-5. **Frontend publik (`apps/website`)** — masih kosong; tanpa ini CMS ini belum bisa dipakai *end-to-end*.
+5. **Frontend publik (`apps/website`)** — sedang dibangun (branch `feat/public-website`).
 6. **API tulis + API key/rate limiting** — sebelum membuka integrasi pihak ketiga.
 7. **Visual builder** — setelah kontrak blok & frontend sudah stabil.
 
