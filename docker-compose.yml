@@ -61,7 +61,7 @@ services:
       composer install --no-interaction --no-progress &&
       php artisan migrate --force &&
       php artisan storage:link &&
-      php artisan serve --host=0.0.0.0 --port=8000
+      cd public && php -S 0.0.0.0:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
       "
 
   pg:

@@ -48,7 +48,7 @@ Prefix `/api` ditambahkan otomatis oleh Laravel (file `routes/api.php`), dan pre
 | *Null*                | Field yang boleh kosong (`blocks`, `content`) tetap muncul dengan nilai `null`.                                                                                  |
 | Filter default        | Hanya konten yang "sudah terbit" (lihat [Aturan Filter](#-aturan-filter--visibilitas-publik)).                                                                   |
 | Autentikasi           | Tidak ada. Semua *endpoint* bersifat publik.                                                                                                                     |
-| Paginasi              | **Belum tersedia.** *Endpoint* daftar mengembalikan seluruh baris (`get()`), tanpa `per_page`/`page`.                                                            |
+| Paginasi              | **Tersedia** untuk `GET /posts` (15/halaman), `GET /categories/{slug}/posts` (15/halaman), dan `GET /media` (24/halaman) — mengikuti format paginasi standar Laravel (`data`, `links`, `meta`). `GET /pages` & `GET /websites` masih mengembalikan seluruh baris. |
 | *Sorting*             | Mengikuti *default* *backend* (lihat tiap *endpoint*). Tidak ada parameter `sort`/`order`.                                                                       |
 | Pencarian             | **Belum tersedia** di API publik. Pencarian hanya ada di kolom tabel *admin panel*.                                                                               |
 | Rate limiting         | **Belum diterapkan.**                                                                                                                                              |
@@ -63,8 +63,11 @@ Prefix `/api` ditambahkan otomatis oleh Laravel (file `routes/api.php`), dan pre
 | `GET`  | `/websites/{domain}`  | Detail satu website + daftar halaman terbitnya.                 |
 | `GET`  | `/pages`              | Daftar seluruh halaman terbit (bisa difilter per website).      |
 | `GET`  | `/pages/{slug}`       | Detail satu halaman beserta konten `blocks`.                    |
-| `GET`  | `/posts`              | Daftar seluruh post blog yang sudah terbit.                     |
-| `GET`  | `/posts/{slug}`       | Detail satu post blog.                                          |
+| `GET`  | `/posts`              | Daftar post blog terbit, paginasi 15 per halaman.               |
+| `GET`  | `/posts/{slug}`       | Detail satu post blog beserta author, categories, seo_meta.     |
+| `GET`  | `/categories`         | Daftar seluruh kategori lengkap dengan jumlah post terbitnya.   |
+| `GET`  | `/categories/{slug}/posts` | Post terbit dalam satu kategori, paginasi 15 per halaman.  |
+| `GET`  | `/media`              | Daftar media library, paginasi 24 per halaman.                  |
 
 Path di atas adalah path relatif terhadap `/api/v1`. Contoh lengkap: `GET http://localhost:8000/api/v1/pages/tentang-kami`.
 
@@ -346,7 +349,7 @@ curl -sS http://localhost:8000/api/v1/posts
 }
 ```
 
-> ⚠️ **Perhatian:** `PostResource` **hanya** mengembalikan ketujuh *field* di atas. Field `featured_image`, `excerpt`, `categories`, `author`, dan `seoMeta` **belum diekspos** oleh API publik meskipun tersimpan di database. Lihat [Gap & Catatan Implementasi](#-gap--catatan-implementasi).
+> ℹ️ **Catatan:** `GET /posts` dipaginasi 15 per halaman (format paginasi standar Laravel: `data` + `links` + `meta`). `PostResource` juga mengembalikan `excerpt`, `featured_image`, `is_published`, serta relasi `author`, `categories`, dan `seo_meta` ketika di-*eager-load* backend.
 
 ---
 
@@ -462,14 +465,12 @@ Format *error response* mengikuti *default* Laravel:
 
 Hal-hal yang **belum ada** di API publik per 6 Oktober 2026, agar *consumer* tidak berharap lebih:
 
-1. **Tidak ada paginasi** pada `GET /pages` dan `GET /posts` (seluruh baris dikembalikan). Akan jadi masalah saat volume konten besar.
-2. **Tidak ada endpoint terpisah untuk `categories`, `media`, `seoMeta`, `websites/{id}`** — *model*-nya sudah ada, tetapi belum dibuka ke publik.
-3. **`PostResource` minim**: `featured_image`, `excerpt`, `categories`, `author`, dan `seoMeta` belum disertakan ke *response*.
-4. **`PageResource` tidak menyertakan `seoMeta`**, meski form *admin panel* sudah menyediakan pengisian SEO untuk halaman.
-5. **Tidak ada pencarian / filter** selain `?website_id=` pada `/pages` (tidak ada filter `?domain=`, `?category=`, `?q=`).
-6. **Tidak ada caching** (`Cache::remember`) maupun ETag di *endpoint*, padahal konten publik jarang berubah.
-7. **Tidak ada API key / rate limiting**, sehingga siapa saja bisa membaca seluruh konten publik tanpa batas.
-8. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
+1. **`GET /pages` dan `GET /websites` belum dipaginasi** (masih mengembalikan seluruh baris). `GET /posts`, `GET /categories/{slug}/posts`, dan `GET /media` sudah dipaginasi.
+2. **Belum ada endpoint untuk `seoMeta` mandiri** dan `websites/{id}` — SEO meta sudah ikut di response post/page, tapi belum ada endpoint khusus.
+3. **Tidak ada pencarian / filter** selain `?website_id=` pada `/pages` (tidak ada filter `?domain=`, `?category=`, `?q=`).
+4. **Tidak ada caching** (`Cache::remember`) maupun ETag di *endpoint*, padahal konten publik jarang berubah.
+5. **Tidak ada API key / rate limiting**, sehingga siapa saja bisa membaca seluruh konten publik tanpa batas.
+6. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
 
 ---
 

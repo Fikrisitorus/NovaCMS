@@ -34,10 +34,17 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 # Konfigurasi PHP untuk production.
+#
+# opcache.validate_timestamps = 1 + revalidate_freq = 2 diperlukan karena
+# source code aplikasi di-mount ke container (bind mount), sehingga
+# perubahan kode setelah container berjalan harus terlihat oleh PHP-FPM.
+# Jika code di-baked ke image, baris ini bisa diubah kembali ke 0 untuk
+# performa maksimal.
 RUN echo "memory_limit = 256M" > /usr/local/etc/php/conf.d/novacms.ini \
     && echo "upload_max_filesize = 64M" >> /usr/local/etc/php/conf.d/novacms.ini \
     && echo "post_max_size = 64M" >> /usr/local/etc/php/conf.d/novacms.ini \
     && echo "opcache.enable = 1" >> /usr/local/etc/php/conf.d/novacms.ini \
-    && echo "opcache.validate_timestamps = 0" >> /usr/local/etc/php/conf.d/novacms.ini
+    && echo "opcache.validate_timestamps = 1" >> /usr/local/etc/php/conf.d/novacms.ini \
+    && echo "opcache.revalidate_freq = 2" >> /usr/local/etc/php/conf.d/novacms.ini
 
 EXPOSE 8000
