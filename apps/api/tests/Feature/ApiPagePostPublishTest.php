@@ -28,12 +28,12 @@ class ApiPagePostPublishTest extends TestCase
     {
         parent::setUp();
 
-        $this->useApiKey();
-
         $this->website = Website::create([
             'name' => 'Site Test',
             'domain' => 'test.example.com',
         ]);
+
+        $this->useApiKey();
     }
 
     public function test_page_detail_mengembalikan_blocks_tanpa_crash(): void

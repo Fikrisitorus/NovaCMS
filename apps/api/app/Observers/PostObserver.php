@@ -13,27 +13,37 @@ use Illuminate\Support\Facades\Cache;
  * Cache store default (database/file) tidak mendukung cache tags, jadi
  * daftar halaman yang pernah di-cache disimpan di satu kunci kecil dan
  * di-flush satu per satu.
+ *
+ * Cache key dibungkus website_id (isolasi multi-tenant), jadi flush
+ * hanya mempengaruhi website pemilik post yang berubah.
  */
 class PostObserver
 {
     public function saved(Post $post): void
     {
-        $this->forgetIndexPages();
-        Cache::forget('api.posts.show.'.$post->slug);
+        $this->forgetIndexPages($post->website_id);
+        Cache::forget("api.posts.show.{$post->website_id}.{$post->slug}");
     }
 
     public function deleted(Post $post): void
     {
-        $this->forgetIndexPages();
-        Cache::forget('api.posts.show.'.$post->slug);
+        $this->forgetIndexPages($post->website_id);
+        Cache::forget("api.posts.show.{$post->website_id}.{$post->slug}");
     }
 
-    private function forgetIndexPages(): void
+    /**
+     * Hapus semua cache halaman index milik website tertentu.
+     */
+    private function forgetIndexPages(?string $websiteId): void
     {
-        $pages = Cache::get('api.posts.index.pages', []);
-        foreach ($pages as $key) {
-            Cache::forget("api.posts.index.{$key}");
+        if ($websiteId === null) {
+            return;
         }
-        Cache::forget('api.posts.index.pages');
+
+        $pages = Cache::get("api.posts.index.pages.{$websiteId}", []);
+        foreach ($pages as $key) {
+            Cache::forget("api.posts.index.{$websiteId}.{$key}");
+        }
+        Cache::forget("api.posts.index.pages.{$websiteId}");
     }
 }

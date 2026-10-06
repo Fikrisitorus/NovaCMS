@@ -9,26 +9,26 @@ use Illuminate\Http\Request;
 
 /**
  * Controller untuk endpoint publik Page.
- * Menyediakan akses baca halaman beserta section-nya untuk frontend.
+ * Menyediakan akses baca halaman beserta blocks-nya untuk frontend.
+ *
+ * Isolasi multi-tenant: query dibatasi ke website pemilik kunci API.
  */
 class PageController extends Controller
 {
     /**
-     * Menampilkan daftar halaman yang sudah dipublikasi.
-     * Bisa difilter berdasarkan website_id melalui query parameter.
+     * Menampilkan daftar halaman yang sudah dipublikasi milik website
+     * pemilik kunci API.
      */
     public function index(Request $request)
     {
-        $query = Page::where('is_published', true)
+        $websiteId = $request->attributes->get('apiKey')->website_id;
+
+        $pages = Page::where('is_published', true)
+            ->where('website_id', $websiteId)
             ->search($request->input('q'))
-            ->with('website');
-
-        // Filter berdasarkan website_id jika diberikan
-        if ($request->has('website_id')) {
-            $query->where('website_id', $request->input('website_id'));
-        }
-
-        $pages = $query->latest()->get();
+            ->with('website')
+            ->latest()
+            ->get();
 
         return PageResource::collection($pages);
     }
@@ -40,9 +40,12 @@ class PageController extends Controller
      * 2026_09_10_094631_modify_pages_and_drop_page_sections; konten halaman
      * kini disimpan pada kolom JSON 'blocks'.
      */
-    public function showBySlug(string $slug)
+    public function showBySlug(Request $request, string $slug)
     {
+        $websiteId = $request->attributes->get('apiKey')->website_id;
+
         $page = Page::where('slug', $slug)
+            ->where('website_id', $websiteId)
             ->where('is_published', true)
             ->with('website')
             ->firstOrFail();

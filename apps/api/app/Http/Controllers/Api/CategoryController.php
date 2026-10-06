@@ -5,20 +5,38 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PostResource;
 use App\Models\Category;
+use Illuminate\Http\Request;
 
 /**
  * Controller untuk endpoint publik Category.
  * Menyediakan akses baca (read-only) daftar kategori dan post
  * yang termasuk dalam sebuah kategori.
+ *
+ * Isolasi multi-tenant: tabel categories sendiri tidak memiliki
+ * website_id, jadi isolasi dilakukan lewat relasi posts — kategori
+ * hanya muncul bila website pemilik kunci API memiliki post di
+ * kategori tersebut.
  */
 class CategoryController extends Controller
 {
     /**
-     * Menampilkan daftar semua kategori.
+     * Menampilkan daftar kategori yang memiliki minimal satu post
+     * terbit milik website pemilik kunci API.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::orderBy('name')->get();
+        $websiteId = $request->attributes->get('apiKey')->website_id;
+
+        $categories = Category::whereHas('posts', function ($query) use ($websiteId) {
+            $query->published()
+                ->where('website_id', $websiteId);
+        })
+            ->withCount(['posts' => function ($query) use ($websiteId) {
+                $query->published()
+                    ->where('website_id', $websiteId);
+            }])
+            ->orderBy('name')
+            ->get();
 
         return response()->json([
             'data' => $categories->map(fn ($category) => [
@@ -26,22 +44,26 @@ class CategoryController extends Controller
                 'name' => $category->name,
                 'slug' => $category->slug,
                 'description' => $category->description,
-                'posts_count' => $category->posts()->published()->count(),
+                'posts_count' => $category->posts_count,
             ]),
         ]);
     }
 
     /**
-     * Menampilkan post terbit yang termasuk dalam kategori berdasarkan slug.
-     * Mendukung pagination melalui query parameter ?page=N.
+     * Menampilkan post terbit yang termasuk dalam kategori berdasarkan
+     * slug, hanya dari website pemilik kunci API.
+     * Mendukung pagination (?page=N) dan pencarian (?q=).
      */
-    public function posts(string $slug)
+    public function posts(Request $request, string $slug)
     {
+        $websiteId = $request->attributes->get('apiKey')->website_id;
+
         $category = Category::where('slug', $slug)->firstOrFail();
 
         $posts = $category->posts()
             ->published()
-            ->search(request()->input('q'))
+            ->where('website_id', $websiteId)
+            ->search($request->input('q'))
             ->with(['author', 'categories', 'seoMeta'])
             ->orderBy('published_at', 'desc')
             ->paginate(15);

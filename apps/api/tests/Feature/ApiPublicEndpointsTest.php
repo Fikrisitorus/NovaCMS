@@ -28,10 +28,10 @@ class ApiPublicEndpointsTest extends TestCase
     {
         parent::setUp();
 
-        $this->useApiKey();
-
         $this->website = Website::factory()->create();
         $this->author = User::factory()->create();
+
+        $this->useApiKey();
     }
 
     public function test_post_index_mengembalikan_relasi_dan_pagination(): void
@@ -161,7 +161,7 @@ class ApiPublicEndpointsTest extends TestCase
 
     public function test_media_index_tidak_mengekspos_path_internal(): void
     {
-        Media::factory()->create();
+        Media::factory()->create(['website_id' => $this->website->id]);
 
         $response = $this->getJson('/api/v1/media');
 

@@ -9,18 +9,23 @@ use Illuminate\Http\Request;
 /**
  * Controller untuk endpoint publik Media.
  *
- * Menyediakan akses baca (read-only) ke media library. Hanya field
- * yang aman untuk konsumsi frontend yang dikembalikan — path internal
- * dan konfigurasi disk sengaja tidak di-expose.
+ * Menyediakan akses baca (read-only) ke media library milik website
+ * pemilik kunci API. Hanya field yang aman untuk konsumsi frontend yang
+ * dikembalikan — path internal dan konfigurasi disk sengaja tidak
+ * di-expose.
  */
 class MediaController extends Controller
 {
     /**
-     * Menampilkan daftar media. Mendukung pagination (?page=N).
+     * Menampilkan daftar media milik website pemilik kunci API.
+     * Mendukung pagination (?page=N) dan pencarian (?q=).
      */
     public function index(Request $request)
     {
-        $media = Media::search($request->input('q'))
+        $websiteId = $request->attributes->get('apiKey')->website_id;
+
+        $media = Media::where('website_id', $websiteId)
+            ->search($request->input('q'))
             ->orderBy('created_at', 'desc')
             ->paginate(24);
 

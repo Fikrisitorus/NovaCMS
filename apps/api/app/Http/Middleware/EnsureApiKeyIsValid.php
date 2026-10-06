@@ -41,6 +41,17 @@ class EnsureApiKeyIsValid
             return $this->unauthorizedResponse();
         }
 
+        // Strict multi-tenant: kunci hanya berlaku jika website-nya masih
+        // aktif. Pemilik yang menonaktifkan situsnya sekaligus memutus
+        // semua akses API tanpa harus mencabut kunci satu per satu.
+        if (! $apiKey->website->is_active) {
+            return $this->forbiddenResponse();
+        }
+
+        // Sematkan kunci ke request agar controller bisa membatasi query
+        // ke website pemilik kunci (isolasi tenant).
+        $request->attributes->set('apiKey', $apiKey);
+
         $this->recordUsage($apiKey);
 
         return $this->handleRateLimit($apiKey, $request, $next);
@@ -117,5 +128,15 @@ class EnsureApiKeyIsValid
         return response()->json([
             'message' => 'Kunci API tidak valid atau tidak disertakan.',
         ], 401);
+    }
+
+    /**
+     * Response 403 untuk kunci yang website-nya sudah dinonaktifkan.
+     */
+    private function forbiddenResponse(): Response
+    {
+        return response()->json([
+            'message' => 'Website pemilik kunci ini sudah dinonaktifkan.',
+        ], 403);
     }
 }

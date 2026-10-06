@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 class Media extends Model
@@ -20,7 +21,16 @@ class Media extends Model
         'size',
         'alt_text',
         'caption',
+        'website_id',
     ];
+
+    /**
+     * Website pemilik media (isolasi multi-tenant).
+     */
+    public function website(): BelongsTo
+    {
+        return $this->belongsTo(Website::class);
+    }
 
     /**
      * Get the full URL of the media file.
