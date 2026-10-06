@@ -9,6 +9,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\WithApiKey;
 use Tests\TestCase;
 
 /**
@@ -17,7 +18,7 @@ use Tests\TestCase;
  */
 class ApiSearchTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithApiKey;
 
     private Website $website;
 
@@ -26,6 +27,8 @@ class ApiSearchTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->useApiKey();
 
         $this->website = Website::factory()->create();
         $this->author = User::factory()->create();

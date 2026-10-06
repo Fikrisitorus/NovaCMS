@@ -6,6 +6,7 @@ use App\Models\Page;
 use App\Models\Post;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\WithApiKey;
 use Tests\TestCase;
 
 /**
@@ -19,13 +20,15 @@ use Tests\TestCase;
  */
 class ApiPagePostPublishTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithApiKey;
 
     private Website $website;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->useApiKey();
 
         $this->website = Website::create([
             'name' => 'Site Test',

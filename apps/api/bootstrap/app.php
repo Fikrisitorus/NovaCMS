@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureApiKeyIsValid;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Middleware API publik: validasi kunci + rate limiting.
+        // Dipasang di route group /api/v1 (routes/api.php) agar panel
+        // admin Filament dan endpoint internal tidak terkena throttle.
+        $middleware->alias([
+            'api.key' => EnsureApiKeyIsValid::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

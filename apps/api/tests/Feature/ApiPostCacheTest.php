@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Tests\Concerns\WithApiKey;
 use Tests\TestCase;
 
 /**
@@ -15,7 +16,7 @@ use Tests\TestCase;
  */
 class ApiPostCacheTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithApiKey;
 
     private Website $website;
 
@@ -24,6 +25,8 @@ class ApiPostCacheTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->useApiKey();
 
         $this->website = Website::factory()->create();
         $this->author = User::factory()->create();
