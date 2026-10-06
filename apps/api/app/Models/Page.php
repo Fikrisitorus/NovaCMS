@@ -39,4 +39,20 @@ class Page extends Model
     {
         return $this->belongsTo(Website::class);
     }
+
+    /**
+     * Scope: cari halaman berdasarkan kata kunci pada title dan slug.
+     * Pencarian case-insensitive dengan LIKE (portabel SQLite/PostgreSQL).
+     */
+    public function scopeSearch($query, ?string $q)
+    {
+        if (blank($q)) {
+            return $query;
+        }
+
+        return $query->where(function ($query) use ($q) {
+            $query->where('title', 'like', "%{$q}%")
+                ->orWhere('slug', 'like', "%{$q}%");
+        });
+    }
 }

@@ -31,8 +31,8 @@ class PostObserver
     private function forgetIndexPages(): void
     {
         $pages = Cache::get('api.posts.index.pages', []);
-        foreach ($pages as $page) {
-            Cache::forget("api.posts.index.{$page}");
+        foreach ($pages as $key) {
+            Cache::forget("api.posts.index.{$key}");
         }
         Cache::forget('api.posts.index.pages');
     }
