@@ -20,7 +20,9 @@ class MediaController extends Controller
      */
     public function index(Request $request)
     {
-        $media = Media::orderBy('created_at', 'desc')->paginate(24);
+        $media = Media::search($request->input('q'))
+            ->orderBy('created_at', 'desc')
+            ->paginate(24);
 
         return response()->json([
             'data' => $media->getCollection()->map(fn ($item) => [

@@ -14,9 +14,6 @@
 #
 # Service pertama menjalankan migration secara otomatis. Setelah selesai,
 # akses http://localhost:8000 dan admin panel di /admin.
-#
-# PERHATIAN: butuh infrastructure/docker/api/Dockerfile yang belum tersedia.
-# Lihat catatan di bagian bawah file ini sebelum menjalankan.
 
 services:
   api:

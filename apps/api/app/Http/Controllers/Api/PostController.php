@@ -22,12 +22,15 @@ class PostController extends Controller
     public function index()
     {
         $page = (int) request()->input('page', 1);
+        $q = request()->input('q');
+
+        $cacheKey = blank($q) ? "api.posts.index.{$page}" : "api.posts.index.{$page}.{$q}";
 
         $posts = Cache::remember(
-            "api.posts.index.{$page}",
+            $cacheKey,
             now()->addMinutes(15),
-            fn () => Post::where('is_published', true)
-                ->where('published_at', '<=', now())
+            fn () => Post::published()
+                ->search($q)
                 ->with(['author', 'categories', 'seoMeta'])
                 ->orderBy('published_at', 'desc')
                 ->paginate(15)
@@ -37,8 +40,9 @@ class PostController extends Controller
         // menghapusnya saat ada perubahan data (cache store default tidak
         // mendukung cache tags).
         $pages = Cache::get('api.posts.index.pages', []);
-        if (! in_array($page, $pages, true)) {
-            Cache::forever('api.posts.index.pages', [...$pages, $page]);
+        $key = blank($q) ? (string) $page : "{$page}.{$q}";
+        if (! in_array($key, $pages, true)) {
+            Cache::forever('api.posts.index.pages', [...$pages, $key]);
         }
 
         return PostResource::collection($posts);

@@ -41,6 +41,7 @@ class CategoryController extends Controller
 
         $posts = $category->posts()
             ->published()
+            ->search(request()->input('q'))
             ->with(['author', 'categories', 'seoMeta'])
             ->orderBy('published_at', 'desc')
             ->paginate(15);

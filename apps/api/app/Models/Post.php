@@ -68,6 +68,24 @@ class Post extends Model
     }
 
     /**
+     * Scope: cari post berdasarkan kata kunci pada title, excerpt,
+     * dan content. Pencarian case-insensitive dengan LIKE (portabel
+     * antara SQLite dev dan PostgreSQL produksi).
+     */
+    public function scopeSearch($query, ?string $q)
+    {
+        if (blank($q)) {
+            return $query;
+        }
+
+        return $query->where(function ($query) use ($q) {
+            $query->where('title', 'like', "%{$q}%")
+                ->orWhere('excerpt', 'like', "%{$q}%")
+                ->orWhere('content', 'like', "%{$q}%");
+        });
+    }
+
+    /**
      * Get the website that owns the post.
      */
     public function website(): BelongsTo

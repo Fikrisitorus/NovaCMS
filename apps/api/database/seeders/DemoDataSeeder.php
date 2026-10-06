@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Media;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\SeoMeta;
 use App\Models\User;
@@ -96,6 +97,57 @@ class DemoDataSeeder extends Seeder
             );
         }
 
-        $this->command->info('Demo data selesai: 1 website, 1 user, 3 kategori, 1 media, 3 post.');
+        $homePage = Page::firstOrCreate(
+            ['slug' => 'home'],
+            [
+                'website_id' => $website->id,
+                'title' => 'Beranda',
+                'is_published' => true,
+                'blocks' => [
+                    [
+                        'type' => 'hero',
+                        'data' => [
+                            'heading' => 'Bangun Situs Modern Lebih Cepat dengan NovaCMS',
+                            'subheading' => 'Headless CMS dan Visual Content Builder berbasis Laravel 12 & Filament v3 untuk pengalaman pengembang dan editor yang maksimal.',
+                            'button_label' => 'Jelajahi Blog',
+                            'button_url' => '/blog',
+                        ],
+                    ],
+                    [
+                        'type' => 'faq',
+                        'data' => [
+                            'heading' => 'Pertanyaan yang Sering Diajukan',
+                            'questions' => [
+                                [
+                                    'question' => 'Apa itu NovaCMS?',
+                                    'answer' => 'NovaCMS adalah Headless CMS modern dengan panel admin berbasis Filament dan API publik untuk frontend apa pun.',
+                                ],
+                                [
+                                    'question' => 'Bagaimana cara menambahkan konten baru?',
+                                    'answer' => 'Masuk ke panel admin di /admin, pilih menu Posts atau Site Pages, dan gunakan visual block builder untuk menyusun halaman.',
+                                ],
+                                [
+                                    'question' => 'Apakah mendukung pencarian?',
+                                    'answer' => 'Ya, endpoint publik mendukung parameter query ?q= untuk artikel, halaman, kategori, dan media.',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        SeoMeta::firstOrCreate(
+            [
+                'seoable_type' => $homePage->getMorphClass(),
+                'seoable_id' => $homePage->id,
+            ],
+            [
+                'meta_title' => 'NovaCMS — Modern Headless CMS & Website Builder',
+                'meta_description' => 'Platform Headless CMS dengan integrasi Laravel 12, Filament, dan frontend modern.',
+            ]
+        );
+
+        $this->command->info('Demo data selesai: 1 website, 1 user, 1 page (home), 3 kategori, 1 media, 3 post.');
     }
 }

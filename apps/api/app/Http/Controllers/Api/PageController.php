@@ -20,6 +20,7 @@ class PageController extends Controller
     public function index(Request $request)
     {
         $query = Page::where('is_published', true)
+            ->search($request->input('q'))
             ->with('website');
 
         // Filter berdasarkan website_id jika diberikan
