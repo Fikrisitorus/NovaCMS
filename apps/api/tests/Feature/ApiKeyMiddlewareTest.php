@@ -18,8 +18,6 @@ class ApiKeyMiddlewareTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Website $website;
-
     private ApiKey $apiKey;
 
     protected function setUp(): void

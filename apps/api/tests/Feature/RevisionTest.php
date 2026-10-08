@@ -28,8 +28,6 @@ class RevisionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Website $website;
-
     private User $user;
 
     protected function setUp(): void

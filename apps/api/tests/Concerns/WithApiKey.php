@@ -17,6 +17,8 @@ trait WithApiKey
 {
     protected ApiKey $apiKey;
 
+    protected Website $website;
+
     /**
      * Buat kunci API aktif dan daftarkan sebagai header default.
      *
@@ -27,8 +29,10 @@ trait WithApiKey
         /** @var Website|null $website */
         $website = Website::first();
 
+        $this->website = $website ?? Website::factory()->create();
+
         $this->apiKey = ApiKey::factory()->create([
-            'website_id' => $website?->id ?? Website::factory()->create()->id,
+            'website_id' => $this->website->id,
         ]);
 
         $this->withHeader('Authorization', "Bearer {$this->apiKey->key}");

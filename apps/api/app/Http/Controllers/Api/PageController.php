@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PageResource;
 use App\Models\Page;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Controller untuk endpoint publik Page.
  * Menyediakan akses baca halaman beserta blocks-nya untuk frontend.
  *
  * Isolasi multi-tenant: query dibatasi ke website pemilik kunci API.
+ * Response di-cache 15 menit (sama seperti PostController) dan
+ * di-invalidate oleh PageObserver setiap kali halaman berubah.
  */
 class PageController extends Controller
 {
@@ -22,13 +25,30 @@ class PageController extends Controller
     public function index(Request $request)
     {
         $websiteId = $request->attributes->get('apiKey')->website_id;
+        $q = $request->input('q');
 
-        $pages = Page::where('is_published', true)
-            ->where('website_id', $websiteId)
-            ->search($request->input('q'))
-            ->with('website')
-            ->latest()
-            ->get();
+        $cacheKey = blank($q)
+            ? "api.pages.index.{$websiteId}"
+            : "api.pages.index.{$websiteId}.{$q}";
+
+        $pages = Cache::remember(
+            $cacheKey,
+            now()->addMinutes(15),
+            fn () => Page::where('is_published', true)
+                ->where('website_id', $websiteId)
+                ->search($q)
+                ->with('website')
+                ->latest()
+                ->get()
+        );
+
+        // Catat key index yang pernah di-cache agar PageObserver bisa
+        // menghapusnya saat ada perubahan data (cache store default tidak
+        // mendukung cache tags).
+        $keys = Cache::get("api.pages.index.keys.{$websiteId}", []);
+        if (! in_array($cacheKey, $keys, true)) {
+            Cache::forever("api.pages.index.keys.{$websiteId}", [...$keys, $cacheKey]);
+        }
 
         return PageResource::collection($pages);
     }
@@ -44,11 +64,15 @@ class PageController extends Controller
     {
         $websiteId = $request->attributes->get('apiKey')->website_id;
 
-        $page = Page::where('slug', $slug)
-            ->where('website_id', $websiteId)
-            ->where('is_published', true)
-            ->with('website')
-            ->firstOrFail();
+        $page = Cache::remember(
+            "api.pages.show.{$websiteId}.{$slug}",
+            now()->addMinutes(15),
+            fn () => Page::where('slug', $slug)
+                ->where('website_id', $websiteId)
+                ->where('is_published', true)
+                ->with('website')
+                ->firstOrFail()
+        );
 
         return new PageResource($page);
     }
