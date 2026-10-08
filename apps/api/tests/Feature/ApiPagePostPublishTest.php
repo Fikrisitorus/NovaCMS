@@ -6,6 +6,7 @@ use App\Models\Page;
 use App\Models\Post;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\WithApiKey;
 use Tests\TestCase;
 
 /**
@@ -19,7 +20,7 @@ use Tests\TestCase;
  */
 class ApiPagePostPublishTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithApiKey;
 
     private Website $website;
 
@@ -31,6 +32,8 @@ class ApiPagePostPublishTest extends TestCase
             'name' => 'Site Test',
             'domain' => 'test.example.com',
         ]);
+
+        $this->useApiKey();
     }
 
     public function test_page_detail_mengembalikan_blocks_tanpa_crash(): void

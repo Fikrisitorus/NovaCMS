@@ -9,6 +9,7 @@ use App\Models\SeoMeta;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\WithApiKey;
 use Tests\TestCase;
 
 /**
@@ -17,7 +18,7 @@ use Tests\TestCase;
  */
 class ApiPublicEndpointsTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithApiKey;
 
     private Website $website;
 
@@ -29,6 +30,8 @@ class ApiPublicEndpointsTest extends TestCase
 
         $this->website = Website::factory()->create();
         $this->author = User::factory()->create();
+
+        $this->useApiKey();
     }
 
     public function test_post_index_mengembalikan_relasi_dan_pagination(): void
@@ -158,7 +161,7 @@ class ApiPublicEndpointsTest extends TestCase
 
     public function test_media_index_tidak_mengekspos_path_internal(): void
     {
-        Media::factory()->create();
+        Media::factory()->create(['website_id' => $this->website->id]);
 
         $response = $this->getJson('/api/v1/media');
 

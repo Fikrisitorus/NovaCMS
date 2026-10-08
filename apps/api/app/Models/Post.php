@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\HtmlSanitizerCast;
 use App\Models\Concerns\SanitizesHtml;
+use App\Models\Contracts\Revisable;
+use App\Models\Traits\HasRevisions;
 use App\Models\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,9 +14,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
-class Post extends Model
+class Post extends Model implements Revisable
 {
-    use HasFactory, HasSeo, HasUuids, SanitizesHtml;
+    use HasFactory, HasRevisions, HasSeo, HasUuids, SanitizesHtml;
+
+    /**
+     * Properti temporer untuk pesan commit revision (trait HasRevisions).
+     * Tidak disimpan ke database — ditarik otomatis setelah event `saved`.
+     */
+    public ?string $revision_summary = null;
 
     protected $fillable = [
         'website_id',
