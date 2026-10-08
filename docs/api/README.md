@@ -1,6 +1,6 @@
 # Dokumentasi API Publik v1
 
-**Tanggal Update Terakhir:** 6 Oktober 2026
+**Tanggal Update Terakhir:** 7 Oktober 2026
 
 > **Wajib dibaca oleh:** Frontend Developer, Mobile Developer, dan Backend Developer.
 > Dokumen ini adalah *contract* resmi endpoint publik NovaCMS. Setiap perubahan `request`/`response` di backend **wajib** diperbarui di sini.
@@ -13,11 +13,11 @@ NovaCMS adalah *headless CMS*: seluruh konten dikelola melalui *admin panel* Fil
 
 Endpoint publik digunakan oleh:
 
-- Frontend website (`apps/website` — belum tersedia),
+- Frontend website (`apps/website`),
 - Template/tema kustom buatan developer,
 - Aplikasi *mobile* atau integrasi pihak ketiga yang hanya butuh membaca konten.
 
-Semua *endpoint* tidak memerlukan autentikasi, token, maupun API key. Data sensitif (post *draft*, halaman belum terbit, website non-aktif, *field* internal) tidak pernah diekspos.
+Semua *endpoint* memerlukan **kunci API** yang terikat ke satu website (lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit)). Data sensitif (post *draft*, halaman belum terbit, website non-aktif, *field* internal) tidak pernah diekspos.
 
 ---
 
@@ -47,29 +47,122 @@ Prefix `/api` ditambahkan otomatis oleh Laravel (file `routes/api.php`), dan pre
 | Format *boolean*      | `true` / `false` (JSON asli, bukan 0/1).                                                                                                                          |
 | *Null*                | Field yang boleh kosong (`blocks`, `content`) tetap muncul dengan nilai `null`.                                                                                  |
 | Filter default        | Hanya konten yang "sudah terbit" (lihat [Aturan Filter](#-aturan-filter--visibilitas-publik)).                                                                   |
-| Autentikasi           | Tidak ada. Semua *endpoint* bersifat publik.                                                                                                                     |
-| Paginasi              | **Tersedia** untuk `GET /posts` (15/halaman), `GET /categories/{slug}/posts` (15/halaman), dan `GET /media` (24/halaman) — mengikuti format paginasi standar Laravel (`data`, `links`, `meta`). `GET /pages` & `GET /websites` masih mengembalikan seluruh baris. |
+| Autentikasi           | **Kunci API wajib** untuk seluruh *endpoint* — header `Authorization: Bearer <key>` atau query `?api_key=<key>`. Kunci terikat ke satu website (lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit)). |
+| Isolasi tenant        | Kunci hanya bisa membaca **website pemilik kunci**. `GET /websites` selalu mengembalikan satu website (pemilik kunci); *endpoint* lain memfilter konten miliknya. Data tenant lain tidak pernah muncul. |
+| Paginasi              | **Tersedia** untuk `GET /posts` (15/halaman), `GET /categories/{slug}/posts` (15/halaman), dan `GET /media` (24/halaman) — mengikuti format paginasi standar Laravel (`data`, `links`, `meta`). `GET /pages` & `GET /websites` masih mengembalikan seluruh baris milik tenant. |
 | *Sorting*             | Mengikuti *default* *backend* (lihat tiap *endpoint*). Tidak ada parameter `sort`/`order`.                                                                       |
-| Pencarian             | **Belum tersedia** di API publik. Pencarian hanya ada di kolom tabel *admin panel*.                                                                               |
-| Rate limiting         | **Belum diterapkan.**                                                                                                                                              |
+| Pencarian             | **Tersedia** via parameter `?q=` pada `/posts`, `/pages`, `/media`, dan `/categories/{slug}/posts` (lihat [🔍 Pencarian](#-pencarian-q)).                       |
+| Rate limiting         | **60 request/menit per kunci.** Lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit).                                                                  |
 
 ---
 
 ## 📋 Daftar Endpoint
 
-| Method | Path                  | Deskripsi                                                      |
-| ------ | --------------------- | -------------------------------------------------------------- |
-| `GET`  | `/websites`           | Daftar seluruh website aktif.                                   |
-| `GET`  | `/websites/{domain}`  | Detail satu website + daftar halaman terbitnya.                 |
-| `GET`  | `/pages`              | Daftar seluruh halaman terbit (bisa difilter per website).      |
-| `GET`  | `/pages/{slug}`       | Detail satu halaman beserta konten `blocks`.                    |
-| `GET`  | `/posts`              | Daftar post blog terbit, paginasi 15 per halaman.               |
-| `GET`  | `/posts/{slug}`       | Detail satu post blog beserta author, categories, seo_meta.     |
-| `GET`  | `/categories`         | Daftar seluruh kategori lengkap dengan jumlah post terbitnya.   |
-| `GET`  | `/categories/{slug}/posts` | Post terbit dalam satu kategori, paginasi 15 per halaman.  |
-| `GET`  | `/media`              | Daftar media library, paginasi 24 per halaman.                  |
+Semua *endpoint* memerlukan kunci API (lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit)). Contoh *request* di bawah menggunakan header `Authorization`; ganti `<KEY>` dengan kunci API Anda.
+
+| Method | Path                       | Deskripsi                                                      |
+| ------ | -------------------------- | -------------------------------------------------------------- |
+| `GET`  | `/websites`                | Website pemilik kunci + daftar halaman terbitnya.              |
+| `GET`  | `/websites/{domain}`       | Detail website pemilik kunci (404 untuk domain tenant lain).   |
+| `GET`  | `/pages`                   | Daftar halaman terbit milik tenant (mendukung `?q=`).          |
+| `GET`  | `/pages/{slug}`            | Detail satu halaman beserta konten `blocks`.                   |
+| `GET`  | `/posts`                   | Daftar post blog terbit, paginasi 15/halaman (mendukung `?q=`). |
+| `GET`  | `/posts/{slug}`            | Detail satu post blog beserta author, categories, seo_meta.    |
+| `GET`  | `/categories`              | Daftar kategori yang punya post terbit milik tenant + jumlah.  |
+| `GET`  | `/categories/{slug}/posts` | Post terbit dalam satu kategori, paginasi 15/halaman (`?q=`).  |
+| `GET`  | `/media`                   | Daftar media milik tenant, paginasi 24/halaman (`?q=`).        |
 
 Path di atas adalah path relatif terhadap `/api/v1`. Contoh lengkap: `GET http://localhost:8000/api/v1/pages/tentang-kami`.
+
+---
+
+## 🔐 Autentikasi & Rate Limit
+
+### Kunci API
+
+Setiap *request* **wajib** menyertakan kunci API yang diterbitkan untuk satu website. Kunci bisa diletakkan di *header* atau di *query string*:
+
+```bash
+# Direkomendasikan: header Authorization (tidak tercatat di URL/server log)
+curl -sS -H "Authorization: Bearer novacms_xxxxxxxxxxxxxxxxxxxxxxxx" \
+  http://localhost:8000/api/v1/posts
+
+# Alternatif: query string
+curl -sS "http://localhost:8000/api/v1/posts?api_key=novacms_xxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Kunci berformat `novacms_<random 40 karakter>` dan disimpan di tabel `api_keys`. Satu website bisa memiliki banyak kunci — mis. terpisah untuk *production* dan *staging* — dan masing-masing dapat **dicabut** (`revoked_at`) tanpa menghapus baris, sehingga audit trail tetap utuh. Mencabut kunci seketika memutus akses frontend yang memakainya.
+
+**Membuat kunci** (admin panel → *Kunci API* → *Buat kunci API*, atau CLI):
+
+```bash
+php artisan api-key:create {domain-website} "Production"
+php artisan api-key:revoke novacms_xxx          # mencabut kunci
+php artisan api-key:flush-usage                  # dipanggil scheduler tiap jam
+```
+
+> ⚠️ **Kunci penuh hanya ditampilkan sekali** saat dibuat (notifikasi di panel / output CLI). Simpan langsung ke *secret manager* atau `.env` frontend — tidak bisa diambil ulang dari UI.
+
+### Isolasi multi-tenant
+
+Kunci terikat ke satu `website_id`. Semua *endpoint* hanya mengembalikan data milik website tersebut:
+
+- `GET /websites` selalu mengembalikan **satu** website (pemilik kunci), bukan daftar seluruh tenant.
+- `GET /websites/{domain}` mengembalikan 404 bila domain bukan milik tenant.
+- `GET /posts`, `GET /pages`, `GET /media`, `GET /categories` hanya memfilter konten milik tenant. Tabel `categories` dan `media` tidak punya `website_id` langsung — isolasi kategori lewat relasi *posts*, media lewat kolom `media.website_id`.
+
+Nonaktifkan website (`is_active = false`) seketika memutus **semua** kuncinya (403) tanpa harus mencabut kunci satu per satu.
+
+### Rate limiting
+
+| Aspek             | Nilai                        |
+| ----------------- | ---------------------------- |
+| Batas             | **60 request / menit per kunci** |
+| Jendela           | Tetap (*fixed window*) 60 detik |
+| Cakupan           | Per kunci API (bukan per IP)  |
+
+Melebihi batas mengembalikan `429`:
+
+```json
+{
+  "message": "Terlalu banyak request. Coba lagi nanti.",
+  "retry_after": 37
+}
+```
+
+Setiap *response* menyertakan *header* standar agar frontend bisa menampilkan UI *throttle*:
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1762247400
+Retry-After: 37          # hanya saat 429
+```
+
+**Penanganan di frontend:** saat menerima `429`, jangan langsung *retry*. Baca `Retry-After`, tunggu, lalu coba lagi. Implementasi frontend yang baik juga memantau `X-RateLimit-Remaining` untuk *debounce* proaktif.
+
+---
+
+## 🔍 Pencarian (`?q=`)
+
+Empat *endpoint* mendukung pencarian *case-insensitive* via parameter `?q=`:
+
+| Endpoint                          | Kolom yang dicari                              |
+| --------------------------------- | ---------------------------------------------- |
+| `GET /posts`                      | `title`, `excerpt`, `content`                  |
+| `GET /categories/{slug}/posts`    | `title`, `excerpt`, `content`                  |
+| `GET /pages`                      | `title`, `slug`                                |
+| `GET /media`                      | `name`, `alt_text`, `caption`, `file_name`     |
+
+```bash
+curl -sS -H "Authorization: Bearer <KEY>" \
+  "http://localhost:8000/api/v1/posts?q=laravel"
+```
+
+- Pencarian memakai `LIKE %q%` (portabel SQLite/PostgreSQL) — mendukung *substring*, bukan *full-text search*. Upgrade ke Meilisearch/Scout kelak akan mengganti layer ini tanpa mengubah kontrak `?q=`.
+- `?q=` kosong / tidak diisi = tanpa filter (mengembalikan semua).
+- Pencarian tetap menghormati aturan filter publik (post *draft*/terjadwal tidak pernah muncul meski cocok).
+- Hasil tetap dipaginasi seperti biasa.
 
 ---
 
@@ -77,48 +170,46 @@ Path di atas adalah path relatif terhadap `/api/v1`. Contoh lengkap: `GET http:/
 
 ### `GET /websites`
 
-Mengembalikan daftar **seluruh website yang aktif** (`is_active = true`), diurutkan dari yang terbaru dibuat.
+Mengembalikan **website pemilik kunci API** beserta daftar **halaman yang sudah terbit**. Karena isolasi tenant, selalu tepat satu website — bukan daftar seluruh tenant.
 
 **Query parameter:** tidak ada.
 
 **Request**
 
 ```bash
-curl -sS http://localhost:8000/api/v1/websites
+curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/websites
 ```
 
 **Response `200 OK`**
 
 ```jsonc
 {
-  "data": [
-    {
-      "id": "0192a3b4-c5d6-7e8f-9012-3456789abcde",
-      "name": "Situs Utama",
-      "domain": "example.com",
-      "is_active": true,
-      "created_at": "2026-09-01T08:00:00.000000Z",
-      "updated_at": "2026-10-05T14:20:00.000000Z"
-    },
-    {
-      "id": "0192a3b4-1111-2222-3333-444455556666",
-      "name": "Blog Produk",
-      "domain": "blog.example.com",
-      "is_active": true,
-      "created_at": "2026-08-12T08:00:00.000000Z",
-      "updated_at": "2026-09-30T09:15:00.000000Z"
-    }
-  ]
+  "data": {
+    "id": "0192a3b4-c5d6-7e8f-9012-3456789abcde",
+    "name": "Situs Utama",
+    "domain": "example.com",
+    "is_active": true,
+    "created_at": "2026-09-01T08:00:00.000000Z",
+    "updated_at": "2026-10-05T14:20:00.000000Z"
+  }
 }
 ```
 
-> Catatan: *endpoint* ini **tidak** menyertakan daftar `pages`. Gunakan `GET /websites/{domain}` atau `GET /pages?website_id=...` bila butuh halamannya.
+**Response `403 Forbidden`** — website pemilik kunci sudah dinonaktifkan:
+
+```json
+{
+  "message": "Website pemilik kunci ini sudah dinonaktifkan."
+}
+```
+
+> Catatan: `data` selalu berupa **object** tunggal (bukan array). Butuh halamannya? Field `pages` sudah ikut di `GET /websites/{domain}`; atau pakai `GET /pages`.
 
 ---
 
 ### `GET /websites/{domain}`
 
-Mengembalikan detail satu website berdasarkan **domain** (bukan UUID), sekaligus daftar **halaman yang sudah terbit** milik website tersebut.
+Mengembalikan detail website pemilik kunci API berdasarkan **domain** (bukan UUID), sekaligus daftar **halaman yang sudah terbit** milik website tersebut. Domain tenant lain mengembalikan `404` (isolasi tenant).
 
 | Path Parameter | Wajib | Tipe   | Keterangan                                            |
 | -------------- | ----- | ------ | ----------------------------------------------------- |
@@ -127,7 +218,7 @@ Mengembalikan detail satu website berdasarkan **domain** (bukan UUID), sekaligus
 **Request**
 
 ```bash
-curl -sS http://localhost:8000/api/v1/websites/example.com
+curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/websites/example.com
 ```
 
 **Response `200 OK`**
@@ -182,22 +273,18 @@ curl -sS http://localhost:8000/api/v1/websites/example.com
 
 ### `GET /pages`
 
-Mengembalikan daftar **seluruh halaman yang sudah terbit** (`is_published = true`) dari seluruh website, diurutkan dari yang terbaru dibuat, lengkap dengan data website induknya.
+Mengembalikan daftar **halaman yang sudah terbit** (`is_published = true`) milik website pemilik kunci API, diurutkan dari yang terbaru dibuat, lengkap dengan data website induknya.
 
 **Query parameter**
 
-| Parameter     | Wajib | Tipe  | Keterangan                                                                                     |
-| ------------- | ----- | ----- | ---------------------------------------------------------------------------------------------- |
-| `website_id`  | ❌     | UUID  | Bila diisi, hanya mengembalikan halaman milik website (UUID) tersebut.                          |
+| Parameter | Wajib | Tipe  | Keterangan                                                                                      |
+| --------- | ----- | ----- | ----------------------------------------------------------------------------------------------- |
+| `q`       | ❌     | string | Pencarian *case-insensitive* pada kolom `title` dan `slug` (lihat [🔍 Pencarian](#-pencarian-q)). |
 
 **Request**
 
 ```bash
-# Semua halaman
-curl -sS http://localhost:8000/api/v1/pages
-
-# Hanya halaman satu website
-curl -sS "http://localhost:8000/api/v1/pages?website_id=0192a3b4-c5d6-7e8f-9012-3456789abcde"
+curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/pages
 ```
 
 **Response `200 OK`**
@@ -257,12 +344,12 @@ Mengembalikan detail satu halaman berdasarkan **slug**, termasuk seluruh kontenn
 
 | Path Parameter | Wajib | Tipe   | Keterangan                          |
 | -------------- | ----- | ------ | ----------------------------------- |
-| `slug`         | ✅     | string | Nilai kolom `pages.slug`, bersifat unik di seluruh aplikasi. |
+| `slug`         | ✅     | string | Nilai kolom `pages.slug`, unik di seluruh aplikasi.               |
 
 **Request**
 
 ```bash
-curl -sS http://localhost:8000/api/v1/pages/tentang-kami
+curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/pages/tentang-kami
 ```
 
 **Response `200 OK`**
@@ -321,14 +408,18 @@ curl -sS http://localhost:8000/api/v1/pages/tentang-kami
 
 ### `GET /posts`
 
-Mengembalikan daftar **post yang sudah dipublikasikan**, yaitu: `is_published = true` **dan** `published_at <= sekarang`. Diurutkan berdasarkan tanggal publikasi terbaru.
+Mengembalikan daftar **post yang sudah dipublikasikan** milik website pemilik kunci API, yaitu: `is_published = true` **dan** `published_at <= sekarang`. Diurutkan berdasarkan tanggal publikasi terbaru.
 
-**Query parameter:** tidak ada.
+**Query parameter**
+
+| Parameter | Wajib | Tipe  | Keterangan                                                                                      |
+| --------- | ----- | ----- | ----------------------------------------------------------------------------------------------- |
+| `q`       | ❌     | string | Pencarian *case-insensitive* pada `title`, `excerpt`, `content` (lihat [🔍 Pencarian](#-pencarian-q)). |
 
 **Request**
 
 ```bash
-curl -sS http://localhost:8000/api/v1/posts
+curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/posts
 ```
 
 **Response `200 OK`**
@@ -359,12 +450,12 @@ Mengembalikan detail satu post berdasarkan **slug**.
 
 | Path Parameter | Wajib | Tipe   | Keterangan                        |
 | -------------- | ----- | ------ | --------------------------------- |
-| `slug`         | ✅     | string | Nilai kolom `posts.slug`, bersifat unik di seluruh aplikasi. |
+| `slug`         | ✅     | string | Nilai kolom `posts.slug`, unik di seluruh aplikasi.              |
 
 **Request**
 
 ```bash
-curl -sS http://localhost:8000/api/v1/posts/memperkenalkan-novacms
+curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/posts/memperkenalkan-novacms
 ```
 
 **Response `200 OK`**
@@ -446,9 +537,11 @@ Catatan:
 | Status | Nama                 | Kapan terjadi                                                                                     |
 | ------ | -------------------- | ------------------------------------------------------------------------------------------------- |
 | `200`  | OK                   | *Request* berhasil, *resource* ditemukan.                                                           |
-| `404`  | Not Found            | Resource tidak ada, **atau** resource ada tetapi gagal aturan filter publik (*draft* / terjadwal / website non-aktif). |
+| `401`  | Unauthorized         | Kunci API tidak disertakan atau tidak ditemukan.                                                    |
+| `403`  | Forbidden            | Website pemilik kunci sudah dinonaktifkan (`is_active = false`).                                    |
+| `404`  | Not Found            | Resource tidak ada, **atau** resource ada tetapi gagal aturan filter publik (*draft* / terjadwal), **atau** resource milik tenant lain (isolasi). |
 | `405`  | Method Not Allowed   | Memakai method selain `GET` (mis. `POST /api/v1/pages`).                                             |
-| `429`  | Too Many Requests    | (Disiapkan) *Rate limiting* belum diterapkan saat ini.                                               |
+| `429`  | Too Many Requests    | Lebih dari 60 request/menit dengan kunci yang sama. Body mengandung `retry_after`; header `Retry-After`. |
 | `500`  | Internal Server Error| Kesalahan server. Jika `APP_DEBUG=true`, body berisi *stack trace* — jangan ekspos ke produksi.      |
 
 Format *error response* mengikuti *default* Laravel:
@@ -463,25 +556,30 @@ Format *error response* mengikuti *default* Laravel:
 
 ## ⚠️ Gap & Catatan Implementasi
 
-Hal-hal yang **belum ada** di API publik per 6 Oktober 2026, agar *consumer* tidak berharap lebih:
+Hal-hal yang **belum ada** di API publik per 7 Oktober 2026, agar *consumer* tidak berharap lebih:
 
-1. **`GET /pages` dan `GET /websites` belum dipaginasi** (masih mengembalikan seluruh baris). `GET /posts`, `GET /categories/{slug}/posts`, dan `GET /media` sudah dipaginasi.
+1. **`GET /pages` dan `GET /websites` belum dipaginasi** (masih mengembalikan seluruh baris milik tenant). `GET /posts`, `GET /categories/{slug}/posts`, dan `GET /media` sudah dipaginasi.
 2. **Belum ada endpoint untuk `seoMeta` mandiri** dan `websites/{id}` — SEO meta sudah ikut di response post/page, tapi belum ada endpoint khusus.
-3. **Tidak ada pencarian / filter** selain `?website_id=` pada `/pages` (tidak ada filter `?domain=`, `?category=`, `?q=`).
-4. **Tidak ada caching** (`Cache::remember`) maupun ETag di *endpoint*, padahal konten publik jarang berubah.
-5. **Tidak ada API key / rate limiting**, sehingga siapa saja bisa membaca seluruh konten publik tanpa batas.
-6. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
+3. **Pencarian belum *full-text*.** `?q=` memakai `LIKE %q%` — substring match, bukan relevansi/typo-tolerant. Upgrade ke Meilisearch/Scout ada di roadmap.
+4. **Hanya `GET /posts` yang di-cache** (`Cache::remember` 15 menit + invalidasi via `PostObserver`). `/pages`, `/categories`, `/media` belum.
+5. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
+6. **Kunci API disimpan plaintext** di tabel `api_keys`. Saat ini aman karena DB berada di infrastruktur yang dikontrol penuh, tapi *hashing* (mis. *hash:* `Hash::make` + lookup atas hash) adalah langkah pengerasan berikutnya.
 
 ---
 
 ## 🧪 Pengujian
 
-Regresi aturan filter di atas dilindungi oleh *test suite* `apps/api/tests/Feature/ApiPagePostPublishTest.php`, yang menguji:
+Regresi seluruh perilaku di atas dilindungi oleh *test suite* `apps/api/tests/Feature/`:
 
-- `GET /pages/{slug}` mengembalikan `blocks` dan tidak *crash* akibat relasi `sections` lama,
-- `GET /pages/{slug}` → `404` untuk halaman *draft*,
-- `GET /posts` hanya menampilkan post yang sudah benar-benar terbit (bukan *unpublished*, bukan terjadwal),
-- `GET /posts/{slug}` → `404` untuk *unpublished* maupun terjadwal.
+| File                              | Yang diuji                                                        |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `ApiPagePostPublishTest`          | Aturan filter publik: `blocks` tidak *crash*, *draft* → 404, post terbit saja. |
+| `ApiPublicEndpointsTest`          | Relasi & paginasi `PostResource`, `posts_count` kategori, field internal media tidak di-expose. |
+| `ApiPostCacheTest`                | Cache `GET /posts` diisi dan ter-invalidate saat post disimpan/dihapus. |
+| `ApiSearchTest`                   | `?q=` pada post (title/content), case-insensitive, tidak tembus *draft*, `?q=` kosong = semua. |
+| `ApiKeyMiddlewareTest`            | 401 tanpa kunci, 200 via header/query, header `X-RateLimit-*`, 429 saat lewat batas, revoke → 401. |
+| `ApiTenantIsolationTest`          | Data tenant lain tidak muncul di posts/pages/media/categories, domain lain → 404, website nonaktif → 403. |
+| `RevisionTest`                    | Versi konten: update → revision baru, restore mengembalikan konten lama, `user_id` tercatat. |
 
 Jalankan sebelum menyentuh *endpoint*:
 
