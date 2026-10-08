@@ -2,15 +2,23 @@
 
 namespace App\Models;
 
+use App\Models\Contracts\Revisable;
+use App\Models\Traits\HasRevisions;
 use App\Models\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Page extends Model
+class Page extends Model implements Revisable
 {
-    use HasFactory, HasSeo, HasUuids;
+    use HasFactory, HasRevisions, HasSeo, HasUuids;
+
+    /**
+     * Properti temporer untuk pesan commit revision (trait HasRevisions).
+     * Tidak disimpan ke database — ditarik otomatis setelah event `saved`.
+     */
+    public ?string $revision_summary = null;
 
     protected $fillable = [
         'website_id',
@@ -19,6 +27,15 @@ class Page extends Model
         'is_published',
         'blocks',
     ];
+
+    /**
+     * Konten halaman disimpan di kolom JSON `blocks`, jadi itulah
+     * atribut yang di-snapshot ke version history.
+     */
+    public function revisionableAttribute(): string
+    {
+        return 'blocks';
+    }
 
     /**
      * Get the attributes that should be cast.

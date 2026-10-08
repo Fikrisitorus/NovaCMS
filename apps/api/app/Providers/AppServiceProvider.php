@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Post;
+use App\Models\Revision;
 use App\Observers\PostObserver;
+use App\Policies\RevisionPolicy;
 use App\Policies\RolePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -33,5 +35,9 @@ class AppServiceProvider extends ServiceProvider
         // Invalidate cache endpoint publik post (PostController menyimpan
         // response selama 15 menit) setiap kali post disimpan/dihapus.
         Post::observe(PostObserver::class);
+
+        // Policy eksplisit untuk model Revision: dipakai FilamentShield
+        // untuk gate view_any revision & aksi restore di RevisionResource.
+        Gate::policy(Revision::class, RevisionPolicy::class);
     }
 }
