@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('api.key')->group(function () {
     // Website endpoints
     Route::get('/websites', [WebsiteController::class, 'index']);
     Route::get('/websites/{domain}', [WebsiteController::class, 'showByDomain']);

@@ -13,27 +13,54 @@ use Illuminate\Support\Facades\Cache;
  * Cache store default (database/file) tidak mendukung cache tags, jadi
  * daftar halaman yang pernah di-cache disimpan di satu kunci kecil dan
  * di-flush satu per satu.
+ *
+ * Cache key dibungkus website_id (isolasi multi-tenant), jadi flush
+ * hanya mempengaruhi website pemilik post yang berubah.
  */
 class PostObserver
 {
     public function saved(Post $post): void
     {
-        $this->forgetIndexPages();
-        Cache::forget('api.posts.show.'.$post->slug);
+        $this->forgetIndexPages($post->website_id);
+        Cache::forget("api.posts.show.{$post->website_id}.{$post->slug}");
+
+        // Daftar kategori bergantung pada post yang terbit, jadi cache
+        // kategori juga harus di-invalidate saat post berubah.
+        $this->forgetCategoryIndex($post);
     }
 
     public function deleted(Post $post): void
     {
-        $this->forgetIndexPages();
-        Cache::forget('api.posts.show.'.$post->slug);
+        $this->forgetIndexPages($post->website_id);
+        Cache::forget("api.posts.show.{$post->website_id}.{$post->slug}");
+        $this->forgetCategoryIndex($post);
     }
 
-    private function forgetIndexPages(): void
+    /**
+     * Hapus cache daftar kategori untuk website pemilik post.
+     */
+    private function forgetCategoryIndex(Post $post): void
     {
-        $pages = Cache::get('api.posts.index.pages', []);
-        foreach ($pages as $key) {
-            Cache::forget("api.posts.index.{$key}");
+        if ($post->website_id === null) {
+            return;
         }
-        Cache::forget('api.posts.index.pages');
+
+        Cache::forget("api.categories.index.{$post->website_id}");
+    }
+
+    /**
+     * Hapus semua cache halaman index milik website tertentu.
+     */
+    private function forgetIndexPages(?string $websiteId): void
+    {
+        if ($websiteId === null) {
+            return;
+        }
+
+        $pages = Cache::get("api.posts.index.pages.{$websiteId}", []);
+        foreach ($pages as $key) {
+            Cache::forget($key);
+        }
+        Cache::forget("api.posts.index.pages.{$websiteId}");
     }
 }

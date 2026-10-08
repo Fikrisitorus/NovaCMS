@@ -33,6 +33,7 @@ class DemoDataSeeder extends Seeder
         $media = Media::firstOrCreate(
             ['file_name' => 'hero-demo.jpg'],
             [
+                'website_id' => $website->id,
                 'name' => 'Hero Demo',
                 'mime_type' => 'image/jpeg',
                 'path' => 'media/hero-demo.jpg',

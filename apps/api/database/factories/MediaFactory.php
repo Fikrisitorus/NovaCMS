@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Media;
+use App\Models\Website;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,6 +21,7 @@ class MediaFactory extends Factory
         $fileName = fake()->word().'.jpg';
 
         return [
+            'website_id' => Website::factory(),
             'name' => fake()->words(2, true),
             'file_name' => $fileName,
             'mime_type' => 'image/jpeg',

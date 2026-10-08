@@ -9,6 +9,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\WithApiKey;
 use Tests\TestCase;
 
 /**
@@ -17,9 +18,7 @@ use Tests\TestCase;
  */
 class ApiSearchTest extends TestCase
 {
-    use RefreshDatabase;
-
-    private Website $website;
+    use RefreshDatabase, WithApiKey;
 
     private User $author;
 
@@ -29,6 +28,8 @@ class ApiSearchTest extends TestCase
 
         $this->website = Website::factory()->create();
         $this->author = User::factory()->create();
+
+        $this->useApiKey();
     }
 
     public function test_search_post_berdasarkan_title(): void
@@ -140,8 +141,14 @@ class ApiSearchTest extends TestCase
 
     public function test_search_media_berdasarkan_nama(): void
     {
-        $match = Media::factory()->create(['name' => 'Foto Hero Laravel']);
-        Media::factory()->create(['name' => 'Logo Perusahaan']);
+        $match = Media::factory()->create([
+            'website_id' => $this->website->id,
+            'name' => 'Foto Hero Laravel',
+        ]);
+        Media::factory()->create([
+            'website_id' => $this->website->id,
+            'name' => 'Logo Perusahaan',
+        ]);
 
         $response = $this->getJson('/api/v1/media?q=Hero');
 
