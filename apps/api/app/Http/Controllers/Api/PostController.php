@@ -48,9 +48,8 @@ class PostController extends Controller
         // menghapusnya saat ada perubahan data (cache store default tidak
         // mendukung cache tags).
         $pages = Cache::get("api.posts.index.pages.{$websiteId}", []);
-        $key = blank($q) ? (string) $page : "{$page}.{$q}";
-        if (! in_array($key, $pages, true)) {
-            Cache::forever("api.posts.index.pages.{$websiteId}", [...$pages, $key]);
+        if (! in_array($cacheKey, $pages, true)) {
+            Cache::forever("api.posts.index.pages.{$websiteId}", [...$pages, $cacheKey]);
         }
 
         return PostResource::collection($posts);

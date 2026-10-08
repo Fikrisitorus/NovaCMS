@@ -22,13 +22,11 @@ class ApiPagePostPublishTest extends TestCase
 {
     use RefreshDatabase, WithApiKey;
 
-    private Website $website;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->website = Website::create([
+        Website::create([
             'name' => 'Site Test',
             'domain' => 'test.example.com',
         ]);

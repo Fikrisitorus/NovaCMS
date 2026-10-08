@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\PostResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Controller untuk endpoint publik Category.
@@ -27,16 +28,20 @@ class CategoryController extends Controller
     {
         $websiteId = $request->attributes->get('apiKey')->website_id;
 
-        $categories = Category::whereHas('posts', function ($query) use ($websiteId) {
-            $query->published()
-                ->where('website_id', $websiteId);
-        })
-            ->withCount(['posts' => function ($query) use ($websiteId) {
+        $categories = Cache::remember(
+            "api.categories.index.{$websiteId}",
+            now()->addMinutes(15),
+            fn () => Category::whereHas('posts', function ($query) use ($websiteId) {
                 $query->published()
                     ->where('website_id', $websiteId);
-            }])
-            ->orderBy('name')
-            ->get();
+            })
+                ->withCount(['posts' => function ($query) use ($websiteId) {
+                    $query->published()
+                        ->where('website_id', $websiteId);
+                }])
+                ->orderBy('name')
+                ->get()
+        );
 
         return response()->json([
             'data' => $categories->map(fn ($category) => [

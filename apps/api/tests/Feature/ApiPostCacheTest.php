@@ -18,8 +18,6 @@ class ApiPostCacheTest extends TestCase
 {
     use RefreshDatabase, WithApiKey;
 
-    private Website $website;
-
     private User $author;
 
     protected function setUp(): void

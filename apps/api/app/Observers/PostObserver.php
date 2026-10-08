@@ -23,12 +23,29 @@ class PostObserver
     {
         $this->forgetIndexPages($post->website_id);
         Cache::forget("api.posts.show.{$post->website_id}.{$post->slug}");
+
+        // Daftar kategori bergantung pada post yang terbit, jadi cache
+        // kategori juga harus di-invalidate saat post berubah.
+        $this->forgetCategoryIndex($post);
     }
 
     public function deleted(Post $post): void
     {
         $this->forgetIndexPages($post->website_id);
         Cache::forget("api.posts.show.{$post->website_id}.{$post->slug}");
+        $this->forgetCategoryIndex($post);
+    }
+
+    /**
+     * Hapus cache daftar kategori untuk website pemilik post.
+     */
+    private function forgetCategoryIndex(Post $post): void
+    {
+        if ($post->website_id === null) {
+            return;
+        }
+
+        Cache::forget("api.categories.index.{$post->website_id}");
     }
 
     /**
@@ -42,7 +59,7 @@ class PostObserver
 
         $pages = Cache::get("api.posts.index.pages.{$websiteId}", []);
         foreach ($pages as $key) {
-            Cache::forget("api.posts.index.{$websiteId}.{$key}");
+            Cache::forget($key);
         }
         Cache::forget("api.posts.index.pages.{$websiteId}");
     }
