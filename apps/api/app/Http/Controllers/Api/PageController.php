@@ -25,11 +25,12 @@ class PageController extends Controller
     public function index(Request $request)
     {
         $websiteId = $request->attributes->get('apiKey')->website_id;
+        $page = (int) $request->input('page', 1);
         $q = $request->input('q');
 
         $cacheKey = blank($q)
-            ? "api.pages.index.{$websiteId}"
-            : "api.pages.index.{$websiteId}.{$q}";
+            ? "api.pages.index.{$websiteId}.{$page}"
+            : "api.pages.index.{$websiteId}.{$page}.{$q}";
 
         $pages = Cache::remember(
             $cacheKey,
@@ -39,7 +40,7 @@ class PageController extends Controller
                 ->search($q)
                 ->with('website')
                 ->latest()
-                ->get()
+                ->paginate(15)
         );
 
         // Catat key index yang pernah di-cache agar PageObserver bisa

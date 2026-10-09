@@ -23,12 +23,17 @@ class PageObserver
     {
         $this->forgetIndexPages($page->website_id);
         Cache::forget("api.pages.show.{$page->website_id}.{$page->slug}");
+
+        // Halaman ikut disajikan di endpoint /websites, jadi cache
+        // website pemiliknya juga harus di-invalidate.
+        $this->forgetWebsiteCache($page->website_id);
     }
 
     public function deleted(Page $page): void
     {
         $this->forgetIndexPages($page->website_id);
         Cache::forget("api.pages.show.{$page->website_id}.{$page->slug}");
+        $this->forgetWebsiteCache($page->website_id);
     }
 
     /**
@@ -45,5 +50,25 @@ class PageObserver
             Cache::forget($key);
         }
         Cache::forget("api.pages.index.keys.{$websiteId}");
+    }
+
+    /**
+     * Hapus cache endpoint /websites milik website tertentu: halaman
+     * disajikan di endpoint tersebut, jadi perubahan halaman harus
+     * meng-invalidate-nya juga.
+     */
+    private function forgetWebsiteCache(?string $websiteId): void
+    {
+        if ($websiteId === null) {
+            return;
+        }
+
+        Cache::forget("api.websites.index.{$websiteId}");
+
+        $keys = Cache::get("api.websites.pages.keys.{$websiteId}", []);
+        foreach ($keys as $key) {
+            Cache::forget($key);
+        }
+        Cache::forget("api.websites.pages.keys.{$websiteId}");
     }
 }

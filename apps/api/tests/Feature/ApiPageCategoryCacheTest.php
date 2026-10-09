@@ -37,7 +37,7 @@ class ApiPageCategoryCacheTest extends TestCase
     {
         $this->getJson('/api/v1/pages')->assertOk();
 
-        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}"));
+        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}.1"));
     }
 
     public function test_response_detail_page_di_cache(): void
@@ -58,7 +58,7 @@ class ApiPageCategoryCacheTest extends TestCase
     public function test_menyimpan_page_menghapus_cache_index(): void
     {
         $this->getJson('/api/v1/pages')->assertOk();
-        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}"));
+        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}.1"));
 
         $this->website->pages()->create([
             'title' => 'Halaman Baru',
@@ -66,7 +66,7 @@ class ApiPageCategoryCacheTest extends TestCase
             'is_published' => true,
         ]);
 
-        $this->assertFalse(Cache::has("api.pages.index.{$this->website->id}"));
+        $this->assertFalse(Cache::has("api.pages.index.{$this->website->id}.1"));
     }
 
     public function test_mengubah_page_menghapus_cache_detail(): void
@@ -96,14 +96,14 @@ class ApiPageCategoryCacheTest extends TestCase
 
         // Cache website sendiri.
         $this->getJson('/api/v1/pages')->assertOk();
-        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}"));
+        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}.1"));
 
         // Website lain belum di-cache.
-        $this->assertFalse(Cache::has("api.pages.index.{$otherWebsite->id}"));
+        $this->assertFalse(Cache::has("api.pages.index.{$otherWebsite->id}.1"));
 
         $this->withHeader('Authorization', "Bearer {$otherKey->key}");
         $this->getJson('/api/v1/pages')->assertOk();
-        $this->assertTrue(Cache::has("api.pages.index.{$otherWebsite->id}"));
+        $this->assertTrue(Cache::has("api.pages.index.{$otherWebsite->id}.1"));
     }
 
     public function test_response_categories_di_cache(): void
@@ -163,8 +163,9 @@ class ApiPageCategoryCacheTest extends TestCase
         $this->getJson('/api/v1/pages')->assertOk();
         $this->getJson('/api/v1/pages?q=tentang')->assertOk();
 
-        // Dua key berbeda: tanpa q dan dengan q.
-        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}"));
-        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}.tentang"));
+        // Dua key berbeda: tanpa q dan dengan q (nomor halaman selalu
+        // menjadi bagian cache key sejak /pages dipaginasi).
+        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}.1"));
+        $this->assertTrue(Cache::has("api.pages.index.{$this->website->id}.1.tentang"));
     }
 }

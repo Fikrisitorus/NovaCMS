@@ -1,6 +1,6 @@
 # Dokumentasi API Publik v1
 
-**Tanggal Update Terakhir:** 7 Oktober 2026
+**Tanggal Update Terakhir:** 9 Oktober 2026
 
 > **Wajib dibaca oleh:** Frontend Developer, Mobile Developer, dan Backend Developer.
 > Dokumen ini adalah *contract* resmi endpoint publik NovaCMS. Setiap perubahan `request`/`response` di backend **wajib** diperbarui di sini.
@@ -48,8 +48,8 @@ Prefix `/api` ditambahkan otomatis oleh Laravel (file `routes/api.php`), dan pre
 | *Null*                | Field yang boleh kosong (`blocks`, `content`) tetap muncul dengan nilai `null`.                                                                                  |
 | Filter default        | Hanya konten yang "sudah terbit" (lihat [Aturan Filter](#-aturan-filter--visibilitas-publik)).                                                                   |
 | Autentikasi           | **Kunci API wajib** untuk seluruh *endpoint* — header `Authorization: Bearer <key>` atau query `?api_key=<key>`. Kunci terikat ke satu website (lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit)). |
-| Isolasi tenant        | Kunci hanya bisa membaca **website pemilik kunci**. `GET /websites` selalu mengembalikan satu website (pemilik kunci); *endpoint* lain memfilter konten miliknya. Data tenant lain tidak pernah muncul. |
-| Paginasi              | **Tersedia** untuk `GET /posts` (15/halaman), `GET /categories/{slug}/posts` (15/halaman), dan `GET /media` (24/halaman) — mengikuti format paginasi standar Laravel (`data`, `links`, `meta`). `GET /pages` & `GET /websites` masih mengembalikan seluruh baris milik tenant. |
+| Isolasi tenant        | Kunci hanya bisa membaca **website pemilik kunci**. `GET /websites` hanya menyajikan halaman milik website pemilik kunci; *endpoint* lain memfilter konten miliknya. Data tenant lain tidak pernah muncul. |
+| Paginasi              | **Tersedia** untuk seluruh *endpoint* daftar: `GET /posts` (15/halaman), `GET /pages` (15/halaman), `GET /websites` (15/halaman), `GET /categories/{slug}/posts` (15/halaman), dan `GET /media` (24/halaman) — mengikuti format paginasi standar Laravel (`data`, `links`, `meta`). Lihat [🔀 Paginasi](#-paginasi-pagen). |
 | *Sorting*             | Mengikuti *default* *backend* (lihat tiap *endpoint*). Tidak ada parameter `sort`/`order`.                                                                       |
 | Pencarian             | **Tersedia** via parameter `?q=` pada `/posts`, `/pages`, `/media`, dan `/categories/{slug}/posts` (lihat [🔍 Pencarian](#-pencarian-q)).                       |
 | Rate limiting         | **60 request/menit per kunci.** Lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit).                                                                  |
@@ -62,9 +62,9 @@ Semua *endpoint* memerlukan kunci API (lihat [🔐 Autentikasi & Rate Limit](#-a
 
 | Method | Path                       | Deskripsi                                                      |
 | ------ | -------------------------- | -------------------------------------------------------------- |
-| `GET`  | `/websites`                | Website pemilik kunci + daftar halaman terbitnya.              |
+| `GET`  | `/websites`                | Halaman terbit milik tenant (paginasi 15/halaman).             |
 | `GET`  | `/websites/{domain}`       | Detail website pemilik kunci (404 untuk domain tenant lain).   |
-| `GET`  | `/pages`                   | Daftar halaman terbit milik tenant (mendukung `?q=`).          |
+| `GET`  | `/pages`                   | Daftar halaman terbit milik tenant (paginasi 15/halaman, `?q=`). |
 | `GET`  | `/pages/{slug}`            | Detail satu halaman beserta konten `blocks`.                   |
 | `GET`  | `/posts`                   | Daftar post blog terbit, paginasi 15/halaman (mendukung `?q=`). |
 | `GET`  | `/posts/{slug}`            | Detail satu post blog beserta author, categories, seo_meta.    |
@@ -107,7 +107,7 @@ php artisan api-key:flush-usage                  # dipanggil scheduler tiap jam
 
 Kunci terikat ke satu `website_id`. Semua *endpoint* hanya mengembalikan data milik website tersebut:
 
-- `GET /websites` selalu mengembalikan **satu** website (pemilik kunci), bukan daftar seluruh tenant.
+- `GET /websites` hanya menyajikan **halaman milik website pemilik kunci** (berdasarkan `website_id` di balik kunci), tidak pernah halaman tenant lain.
 - `GET /websites/{domain}` mengembalikan 404 bila domain bukan milik tenant.
 - `GET /posts`, `GET /pages`, `GET /media`, `GET /categories` hanya memfilter konten milik tenant. Tabel `categories` dan `media` tidak punya `website_id` langsung — isolasi kategori lewat relasi *posts*, media lewat kolom `media.website_id`.
 
@@ -166,31 +166,112 @@ curl -sS -H "Authorization: Bearer <KEY>" \
 
 ---
 
+## 🔀 Paginasi (`?page=N`)
+
+Seluruh *endpoint* daftar dipaginasi: `GET /posts`, `GET /pages`, `GET /websites`, `GET /categories/{slug}/posts` (15 per halaman), dan `GET /media` (24 per halaman). Pilih halaman dengan parameter `?page=N` (default `1`).
+
+```bash
+curl -sS -H "Authorization: Bearer <key>" "http://localhost:8000/api/v1/pages?page=2"
+```
+
+Response koleksi selalu mengikuti format paginasi standar Laravel:
+
+```jsonc
+{
+  "data": [ /* item pada halaman ini */ ],
+  "links": {
+    "first": "http://localhost:8000/api/v1/pages?page=1",
+    "last": "http://localhost:8000/api/v1/pages?page=4",
+    "prev": "http://localhost:8000/api/v1/pages?page=1",
+    "next": "http://localhost:8000/api/v1/pages?page=3"
+  },
+  "meta": {
+    "current_page": 2,
+    "from": 16,
+    "last_page": 4,
+    "per_page": 15,
+    "to": 30,
+    "total": 52
+  }
+}
+```
+
+- `data` hanya berisi item pada halaman yang diminta.
+- Halaman di luar jangkauan (`?page` > `last_page`) mengembalikan `data` kosong, **bukan** error.
+- Nilai `page` tidak valid (mis. `?page=abc`) diabaikan dan jatuh ke halaman 1.
+- Paginasi menghormati filter publik & isolasi tenant: `meta.total` selalu jumlah item milik tenant yang *sudah terbit*.
+- Respons index di-cache 15 menit per nomor halaman, sehingga meminta `?page=N` berulang kali terhitung satu kueri. Lihat [Caching](#-caching).
+
+---
+
 ## 🌐 Website
 
 ### `GET /websites`
 
-Mengembalikan **website pemilik kunci API** beserta daftar **halaman yang sudah terbit**. Karena isolasi tenant, selalu tepat satu website — bukan daftar seluruh tenant.
+Mengembalikan daftar **halaman yang sudah terbit** (`is_published = true`) milik website pemilik kunci API, diurutkan dari yang terbaru dibuat. Karena isolasi tenant, hanya halaman tenant tersebut yang muncul — tidak pernah halaman tenant lain.
 
-**Query parameter:** tidak ada.
+Endpoint ini adalah cara cepat mengambil *semua* halaman sebuah website; bila butuh metadata website-nya (name, domain), pakai `GET /websites/{domain}`.
+
+**Query parameter**
+
+| Parameter | Wajib | Tipe  | Keterangan                                                                                      |
+| --------- | ----- | ----- | ----------------------------------------------------------------------------------------------- |
+| `page`    | ❌     | int   | Nomor halaman (default `1`). 15 item per halaman — lihat [🔀 Paginasi](#-paginasi-pagen).        |
 
 **Request**
 
 ```bash
-curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/websites
+curl -sS -H "Authorization: Bearer ***" http://localhost:8000/api/v1/websites
 ```
 
 **Response `200 OK`**
 
 ```jsonc
 {
-  "data": {
-    "id": "0192a3b4-c5d6-7e8f-9012-3456789abcde",
-    "name": "Situs Utama",
-    "domain": "example.com",
-    "is_active": true,
-    "created_at": "2026-09-01T08:00:00.000000Z",
-    "updated_at": "2026-10-05T14:20:00.000000Z"
+  "data": [
+    {
+      "id": "0192a3b4-aaaa-bbbb-cccc-ddddeeeeffff",
+      "website_id": "0192a3b4-c5d6-7e8f-9012-3456789abcde",
+      "title": "Beranda",
+      "slug": "beranda",
+      "is_published": true,
+      "blocks": [
+        {
+          "type": "hero",
+          "data": {
+            "heading": "Selamat Datang di NovaCMS",
+            "subheading": "Headless CMS modern untuk website Anda",
+            "button_label": "Hubungi Kami",
+            "button_url": "https://example.com/kontak",
+            "background_image": "hero/bg-utama.jpg"
+          }
+        }
+      ],
+      "website": {
+        "id": "0192a3b4-c5d6-7e8f-9012-3456789abcde",
+        "name": "Situs Utama",
+        "domain": "example.com",
+        "is_active": true,
+        "created_at": "2026-09-01T08:00:00.000000Z",
+        "updated_at": "2026-10-05T14:20:00.000000Z"
+      },
+      "created_at": "2026-09-01T08:00:00.000000Z",
+      "updated_at": "2026-10-05T14:20:00.000000Z"
+    }
+  ],
+  "links": {
+    "first": "http://localhost:8000/api/v1/websites?page=1",
+    "last": "http://localhost:8000/api/v1/websites?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "per_page": 15,
+    "to": 1,
+    "total": 1
   }
 }
 ```
@@ -203,7 +284,7 @@ curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/websites
 }
 ```
 
-> Catatan: `data` selalu berupa **object** tunggal (bukan array). Butuh halamannya? Field `pages` sudah ikut di `GET /websites/{domain}`; atau pakai `GET /pages`.
+> Catatan: `data` sekarang berupa **array** paginasi (sebelumnya object tunggal). Field setiap item identik dengan `GET /pages` — endpoint ini memang diperuntukkan mengambil daftar halaman sebuah website. Metadata website sendiri (name, domain) tersedia di `GET /websites/{domain}` atau lewat field `website` pada setiap item.
 
 ---
 
@@ -280,6 +361,7 @@ Mengembalikan daftar **halaman yang sudah terbit** (`is_published = true`) milik
 | Parameter | Wajib | Tipe  | Keterangan                                                                                      |
 | --------- | ----- | ----- | ----------------------------------------------------------------------------------------------- |
 | `q`       | ❌     | string | Pencarian *case-insensitive* pada kolom `title` dan `slug` (lihat [🔍 Pencarian](#-pencarian-q)). |
+| `page`    | ❌     | int   | Nomor halaman (default `1`). 15 item per halaman — lihat [🔀 Paginasi](#-paginasi-pagen).        |
 
 **Request**
 
@@ -330,11 +412,27 @@ curl -sS -H "Authorization: Bearer <KEY>" http://localhost:8000/api/v1/pages
       "created_at": "2026-09-02T10:00:00.000000Z",
       "updated_at": "2026-10-04T16:00:00.000000Z"
     }
-  ]
+  ],
+  "links": {
+    "first": "http://localhost:8000/api/v1/pages?page=1",
+    "last": "http://localhost:8000/api/v1/pages?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "per_page": 15,
+    "to": 1,
+    "total": 1
+  }
 }
 ```
 
 > Bila website tidak ditemukan / tidak aktif, parameter `website_id` hanya menghasilkan *array* kosong (`"data": []`) — **tidak** menghasilkan *error*.
+>
+> ℹ️ **Catatan:** `GET /pages` dipaginasi 15 per halaman (format paginasi standar Laravel: `data` + `links` + `meta`). Field `links`/`meta` ada di akar response; `data` hanya berisi 15 item per halaman.
 
 ---
 
@@ -532,6 +630,29 @@ Catatan:
 
 ---
 
+## 💾 Caching
+
+Response *index* di-cache 15 menit untuk mengurangi beban database, dan **di-invalidate otomatis** setiap kali data terkait berubah (`Cache::forget` via observer):
+
+| Endpoint                       | Cache key                                                            | Di-invalidate oleh                    |
+| ------------------------------ | ------------------------------------------------------------------- | ------------------------------------- |
+| `GET /posts`                   | `api.posts.index.{websiteId}.{page}[.{q}]`                           | `PostObserver` (post disimpan/dihapus) |
+| `GET /posts/{slug}`            | `api.posts.show.{websiteId}.{slug}`                                 | `PostObserver`                         |
+| `GET /pages`                   | `api.pages.index.{websiteId}.{page}[.{q}]`                           | `PageObserver` (page disimpan/dihapus) |
+| `GET /pages/{slug}`            | `api.pages.show.{websiteId}.{slug}`                                 | `PageObserver`                         |
+| `GET /websites`                | `api.websites.index.{websiteId}` + `api.websites.pages.{websiteId}.{page}` | `WebsiteObserver` & `PageObserver` |
+| `GET /websites/{domain}`       | `api.websites.show.{websiteId}.{domain}`                            | `WebsiteObserver` & `PageObserver`    |
+| `GET /categories`              | `api.categories.index.{websiteId}`                                  | `PostObserver`                         |
+
+Catatan:
+
+- **Nomor halaman selalu menjadi bagian cache key** sejak paginasi diterapkan, sehingga tiap halaman tersendiri dan tidak saling menimpa.
+- Cache store default (database/file) **tidak mendukung cache tags**, jadi daftar key index yang pernah di-cache disimpan di kunci *registry* kecil per website (`api.*.index.keys.{websiteId}` / `api.*.index.pages.{websiteId}`) yang menyimpan **full cache key**, lalu di-flush satu per satu oleh observer.
+- Semua cache key dibungkus `website_id`, jadi *flush* hanya memengaruhi website pemilik data yang berubah — tidak ada kebocoran antar tenant.
+- Cache invalidation juga diterapkan menyilang: perubahan halaman menghapus cache `GET /websites` (karena halaman disajikan di sana), dan perubahan post menghapus cache kategori.
+
+---
+
 ## 🚦 Status Code
 
 | Status | Nama                 | Kapan terjadi                                                                                     |
@@ -556,14 +677,12 @@ Format *error response* mengikuti *default* Laravel:
 
 ## ⚠️ Gap & Catatan Implementasi
 
-Hal-hal yang **belum ada** di API publik per 7 Oktober 2026, agar *consumer* tidak berharap lebih:
+Hal-hal yang **belum ada** di API publik per 9 Oktober 2026, agar *consumer* tidak berharap lebih:
 
-1. **`GET /pages` dan `GET /websites` belum dipaginasi** (masih mengembalikan seluruh baris milik tenant). `GET /posts`, `GET /categories/{slug}/posts`, dan `GET /media` sudah dipaginasi.
-2. **Belum ada endpoint untuk `seoMeta` mandiri** dan `websites/{id}` — SEO meta sudah ikut di response post/page, tapi belum ada endpoint khusus.
-3. **Pencarian belum *full-text*.** `?q=` memakai `LIKE %q%` — substring match, bukan relevansi/typo-tolerant. Upgrade ke Meilisearch/Scout ada di roadmap.
-4. **Hanya `GET /posts` yang di-cache** (`Cache::remember` 15 menit + invalidasi via `PostObserver`). `/pages`, `/categories`, `/media` belum.
-5. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
-6. **Kunci API disimpan plaintext** di tabel `api_keys`. Saat ini aman karena DB berada di infrastruktur yang dikontrol penuh, tapi *hashing* (mis. *hash:* `Hash::make` + lookup atas hash) adalah langkah pengerasan berikutnya.
+1. **Belum ada endpoint untuk `seoMeta` mandiri** dan `websites/{id}` — SEO meta sudah ikut di response post/page, tapi belum ada endpoint khusus.
+2. **Pencarian belum *full-text*.** `?q=` memakai `LIKE %q%` — substring match, bukan relevansi/typo-tolerant. Upgrade ke Meilisearch/Scout ada di roadmap.
+3. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
+4. **Kunci API disimpan plaintext** di tabel `api_keys`. Saat ini aman karena DB berada di infrastruktur yang dikontrol penuh, tapi *hashing* (mis. *hash:* `Hash::make` + lookup atas hash) adalah langkah pengerasan berikutnya.
 
 ---
 
@@ -579,6 +698,7 @@ Regresi seluruh perilaku di atas dilindungi oleh *test suite* `apps/api/tests/Fe
 | `ApiSearchTest`                   | `?q=` pada post (title/content), case-insensitive, tidak tembus *draft*, `?q=` kosong = semua. |
 | `ApiKeyMiddlewareTest`            | 401 tanpa kunci, 200 via header/query, header `X-RateLimit-*`, 429 saat lewat batas, revoke → 401. |
 | `ApiTenantIsolationTest`          | Data tenant lain tidak muncul di posts/pages/media/categories, domain lain → 404, website nonaktif → 403. |
+| `ApiPaginationTest`               | Paginasi `GET /pages` & `GET /websites` (meta current_page/per_page/total, 15/halaman) + isolasi tenant tetap utuh. |
 | `RevisionTest`                    | Versi konten: update → revision baru, restore mengembalikan konten lama, `user_id` tercatat. |
 
 Jalankan sebelum menyentuh *endpoint*:
