@@ -23,6 +23,10 @@ trait WithApiKey
      * Buat kunci API aktif dan daftarkan sebagai header default.
      *
      * Panggil dari setUp() test class yang memakai endpoint publik.
+     *
+     * Kunci disimpan sebagai hash di DB, jadi plaintext untuk header
+     * Authorization diambil dari ->plain_text_key (diisi factory state
+     * withPlainText saat kunci di-generate).
      */
     protected function useApiKey(): void
     {
@@ -31,10 +35,10 @@ trait WithApiKey
 
         $this->website = $website ?? Website::factory()->create();
 
-        $this->apiKey = ApiKey::factory()->create([
+        $this->apiKey = ApiKey::factory()->withPlainText()->create([
             'website_id' => $this->website->id,
         ]);
 
-        $this->withHeader('Authorization', "Bearer {$this->apiKey->key}");
+        $this->withHeader('Authorization', "Bearer {$this->apiKey->plain_text_key}");
     }
 }

@@ -130,11 +130,11 @@ class ApiPaginationTest extends TestCase
         ]);
 
         // Kunci tenant lain melihat website-nya sendiri di halaman 1.
-        $otherKey = ApiKey::factory()->create([
+        $otherKey = ApiKey::factory()->withPlainText()->create([
             'website_id' => $otherWebsite->id,
         ]);
 
-        $this->withHeader('Authorization', "Bearer {$otherKey->key}");
+        $this->withHeader('Authorization', "Bearer {$otherKey->plain_text_key}");
 
         $this->getJson('/api/v1/pages')
             ->assertOk()
@@ -244,11 +244,11 @@ class ApiPaginationTest extends TestCase
         ]);
 
         // Kunci tenant lain hanya melihat halaman website-nya sendiri.
-        $otherKey = ApiKey::factory()->create([
+        $otherKey = ApiKey::factory()->withPlainText()->create([
             'website_id' => $otherWebsite->id,
         ]);
 
-        $this->withHeader('Authorization', "Bearer {$otherKey->key}");
+        $this->withHeader('Authorization', "Bearer {$otherKey->plain_text_key}");
 
         $this->getJson('/api/v1/websites')
             ->assertOk()

@@ -8,6 +8,10 @@ use Filament\Resources\Pages\CreateRecord;
 /**
  * Halaman buat kunci API. Setelah sukses, tampilkan kunci penuh sekali
  * saja melalui notifikasi — tidak pernah disimpan di tampilan daftar.
+ *
+ * Form mengisi `key` dengan plaintext hasil generate; mutator model
+ * langsung meng-hashnya sebelum disimpan, sehingga notifikasi di bawah
+ * tetap menampilkan plaintext asli yang harus disalin user.
  */
 class CreateApiKey extends CreateRecord
 {
@@ -17,7 +21,7 @@ class CreateApiKey extends CreateRecord
     {
         $this->notify(
             'success',
-            'Kunci API: '.$this->record->key.' — salin sekarang, tidak akan ditampilkan lagi.',
+            'Kunci API: '.$this->record->plain_text_key.' — salin sekarang, tidak akan ditampilkan lagi.',
             durationMs: 15000,
         );
     }
