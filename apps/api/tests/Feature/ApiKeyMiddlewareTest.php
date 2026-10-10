@@ -138,12 +138,14 @@ class ApiKeyMiddlewareTest extends TestCase
         $this->assertStringStartsWith('$2y$', $this->apiKey->key);
         $this->assertStringNotContainsString($this->apiKey->plain_text_key, $this->apiKey->key);
 
-        // Prefix 8 karakter pertama plaintext ikut disimpan untuk lookup.
-        $this->assertSame('novacms_', $this->apiKey->key_prefix);
+        // Prefix 12 karakter pertama plaintext ikut disimpan untuk lookup.
+        // 12 (bukan 8) karena 8 karakter pertama selalu 'novacms_' —
+        // prefix 8 tidak mempersempit kandidat lookup sama sekali.
         $this->assertSame(
-            substr($this->apiKey->plain_text_key, 0, 8),
+            substr($this->apiKey->plain_text_key, 0, 12),
             $this->apiKey->key_prefix
         );
+        $this->assertNotSame('novacms_', $this->apiKey->key_prefix);
 
         // Plaintext yang mengandung prefix saja (tidak cocok hash) tetap ditolak.
         $this->getJson('/api/v1/websites', [
@@ -156,7 +158,8 @@ class ApiKeyMiddlewareTest extends TestCase
     {
         // Satu kunci (milik setUp) memakai prefix ini, jadi lookup
         // prefix pasti menemukan kandidat — tapi Hash::check gagal.
-        $this->assertSame(1, ApiKey::where('key_prefix', 'novacms_')->count());
+        $prefix = substr($this->apiKey->plain_text_key, 0, 12);
+        $this->assertSame(1, ApiKey::where('key_prefix', $prefix)->count());
 
         // Prefix 8 karakter pertama plaintext sudah ada di DB, tapi
         // hash-nya tidak cocok dengan plaintext ini — tetap 401.

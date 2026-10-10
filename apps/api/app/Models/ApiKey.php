@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\Hash;
  * Kolom `key` hanya menyimpan **hash** dari plaintext kunci (bcrypt),
  * sama seperti password user — plaintext tidak pernah disimpan setelah
  * kunci dibuat. Untuk tetap bisa mencari kunci saat validasi request
- * tanpa memeriksa seluruh tabel, kolom `key_prefix` menyimpan 8
- * karakter pertama plaintext; lookup dilakukan berdasarkan prefix
- * lalu tiap kandidat diverifikasi dengan Hash::check.
+ * tanpa memeriksa seluruh tabel, kolom `key_prefix` menyimpan 12
+ * karakter pertama plaintext (bukan 8) — 8 karakter pertama adalah
+ * prefix tetap 'novacms_', jadi 8 saja tidak mempersempit kandidat
+ * sama sekali. 12 karakter masih menyisakan ruang identifikasi aman
+ * untuk ditampilkan di UI.
  *
  * Sebuah website bisa memiliki banyak kunci; setiap kunci bisa
  * di-revoke (soft) dengan mengisi revoked_at tanpa menghapus barisnya,
@@ -77,7 +79,7 @@ class ApiKey extends Model
 
     /**
      * Saat `key` diisi dengan plaintext, simpan hash-nya di kolom `key`
-     * dan 8 karakter pertama plaintext di `key_prefix`. Plaintext asli
+     * dan 12 karakter pertama plaintext di `key_prefix`. Plaintext asli
      * tetap bisa diakses lewat property ->plain_text_key untuk
      * ditampilkan sekali ke user (notifikasi Filament / output CLI).
      *
@@ -101,7 +103,7 @@ class ApiKey extends Model
         // Simpan plaintext ke property biasa (bukan attributes) agar
         // tidak ikut tertulis ke database.
         $this->plain_text_key = $plaintext;
-        $this->attributes['key_prefix'] = substr($plaintext, 0, 8);
+        $this->attributes['key_prefix'] = substr($plaintext, 0, 12);
         $this->attributes['key'] = $this->keyHashCache[$plaintext] ??= Hash::make($plaintext);
     }
 
@@ -138,7 +140,7 @@ class ApiKey extends Model
         }
 
         $candidates = static::query()
-            ->where('key_prefix', substr($plaintext, 0, 8))
+            ->where('key_prefix', substr($plaintext, 0, 12))
             ->whereNull('revoked_at')
             ->get();
 

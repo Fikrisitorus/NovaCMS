@@ -93,7 +93,7 @@ curl -sS "http://localhost:8000/api/v1/posts?api_key=novacms_xxxxxxxxxxxxxxxxxxx
 
 Kunci berformat `novacms_<random 40 karakter>` dan disimpan di tabel `api_keys`. Satu website bisa memiliki banyak kunci — mis. terpisah untuk *production* dan *staging* — dan masing-masing dapat **dicabut** (`revoked_at`) tanpa menghapus baris, sehingga audit trail tetap utuh. Mencabut kunci seketika memutus akses frontend yang memakainya.
 
-> 🔒 **Kunci disimpan sebagai hash.** Kolom `api_keys.key` berisi *hash* bcrypt dari plaintext — bukan plaintext itu sendiri — persis seperti password user. Yang bisa dibaca dari DB hanyalah `key_prefix` (8 karakter pertama plaintext, selalu `novacms_`) yang dipakai untuk mempersempit kandidat saat *lookup*. Konsekuensinya: plaintext **tidak bisa dipulihkan** dari database dalam keadaan apa pun, termasuk oleh admin — hanya diketahui pemilik kunci yang menyimpannya saat pertama dibuat.
+> 🔒 **Kunci disimpan sebagai hash.** Kolom `api_keys.key` berisi *hash* bcrypt dari plaintext — bukan plaintext itu sendiri — persis seperti password user. Yang bisa dibaca dari DB hanyalah `key_prefix` (12 karakter pertama plaintext) yang dipakai untuk mempersempit kandidat saat *lookup* — 12 dipakai karena 8 karakter pertama selalu `novacms_`, sehingga prefix 8 tidak mengecilkan kandidat sama sekali. Konsekuensinya: plaintext **tidak bisa dipulihkan** dari database dalam keadaan apa pun, termasuk oleh admin — hanya diketahui pemilik kunci yang menyimpannya saat pertama dibuat.
 
 **Membuat kunci** (admin panel → *Kunci API* → *Buat kunci API*, atau CLI):
 
@@ -684,7 +684,7 @@ Hal-hal yang **belum ada** di API publik per 11 Oktober 2026, agar *consumer* ti
 1. **Belum ada endpoint untuk `seoMeta` mandiri** dan `websites/{id}` — SEO meta sudah ikut di response post/page, tapi belum ada endpoint khusus.
 2. **Pencarian belum *full-text*.** `?q=` memakai `LIKE %q%` — substring match, bukan relevansi/typo-tolerant. Upgrade ke Meilisearch/Scout ada di roadmap.
 3. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
-4. ~~**Kunci API disimpan plaintext** di tabel `api_keys`.~~ ✅ **Sudah diatasi** (11 Oktober 2026): kolom `key` sekarang menyimpan *hash* bcrypt, dengan kolom `key_prefix` (8 karakter pertama plaintext) sebagai pintu *lookup* sebelum verifikasi via `Hash::check`. Plaintext lama di-hash saat migrasi dan tidak bisa dipulihkan; lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit).
+4. ~~**Kunci API disimpan plaintext** di tabel `api_keys`.~~ ✅ **Sudah diatasi** (11 Oktober 2026): kolom `key` sekarang menyimpan *hash* bcrypt, dengan kolom `key_prefix` (12 karakter pertama plaintext) sebagai pintu *lookup* sebelum verifikasi via `Hash::check`. Plaintext lama di-hash saat migrasi dan tidak bisa dipulihkan; lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit).
 
 ---
 

@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Schema;
  *
  * Sebelumnya kolom `api_keys.key` berisi plaintext kunci — siapa pun
  * yang bisa membaca DB langsung mendapatkan akses API. Migration ini:
- *  1. Menambah kolom `key_prefix` (8 karakter pertama plaintext) yang
+ *  1. Menambah kolom `key_prefix` (12 karakter pertama plaintext) yang
  *     dipakai untuk mempersempit lookup saat validasi request.
+ *     12 dipakai (bukan 8) karena 8 karakter pertama selalu 'novacms_'
+ *     — prefix 8 tidak mengecilkan kandidat sama sekali.
  *  2. Mengisi `key_prefix` dari plaintext yang ada, lalu mengganti
  *     isi `key` dengan Hash::make(plaintext).
  *
@@ -28,7 +30,7 @@ return new class extends Migration
             // Prefix dipakai untuk lookup + identifikasi yang aman
             // ditampilkan di UI. Dibuat dulu sebagai nullable karena
             // baris lama belum memilikinya sampai data diisi di bawah.
-            $table->string('key_prefix', 8)->nullable()->after('key');
+            $table->string('key_prefix', 12)->nullable()->after('key');
         });
 
         // Index eksplisit (bukan $table->index()) karena SQLite
@@ -49,7 +51,7 @@ return new class extends Migration
                     ->update([
                         // Bila data sudah berupa hash (mis. migration
                         // pernah jalan sebagian), jangan hash ulang.
-                        'key_prefix' => substr($plain, 0, 8),
+                        'key_prefix' => substr($plain, 0, 12),
                         'key' => str_starts_with($plain, '$2y$')
                             ? $plain
                             : Hash::make($plain),
@@ -60,7 +62,7 @@ return new class extends Migration
         // Setelah seluruh baris punya prefix, jadikan tidak null agar
         // lookup prefix selalu mendapat kandidat yang lengkap.
         Schema::table('api_keys', function (Blueprint $table): void {
-            $table->string('key_prefix', 8)->nullable(false)->change();
+            $table->string('key_prefix', 12)->nullable(false)->change();
         });
     }
 

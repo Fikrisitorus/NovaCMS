@@ -41,7 +41,7 @@ class CreateApiKey extends Command
             'website_id' => $website->id,
             'name' => $this->argument('name') ?? 'Default',
             'key' => $plaintext,
-            'key_prefix' => substr($plaintext, 0, 8),
+            'key_prefix' => substr($plaintext, 0, 12),
         ]);
 
         $this->info('Kunci API berhasil dibuat.');
