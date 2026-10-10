@@ -170,10 +170,22 @@ class ApiTenantIsolationTest extends TestCase
 
     public function test_website_index_hanya_mengembalikan_website_sendiri(): void
     {
+        // /websites memaginasi halaman yang terbit, jadi buat satu
+        // halaman milik website sendiri untuk diuji.
+        $ownPage = Page::factory()->create([
+            'website_id' => $this->apiKey->website_id,
+            'is_published' => true,
+        ]);
+        Page::factory()->create([
+            'website_id' => $this->otherWebsite->id,
+            'is_published' => true,
+        ]);
+
         $response = $this->getJson('/api/v1/websites');
 
         $response->assertOk()
-            ->assertJsonPath('data.id', $this->apiKey->website_id)
+            ->assertJsonPath('data.0.id', $ownPage->id)
+            ->assertJsonPath('meta.total', 1)
             ->assertJsonMissing(['id' => $this->otherWebsite->id]);
     }
 
