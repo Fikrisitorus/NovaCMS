@@ -41,6 +41,8 @@ class ApiKeyResource extends Resource
 
                 // Input tersembunyi: kunci di-generate server-side saat
                 // create. Field ini tidak menerima input dari user.
+                // Mutator model langsung meng-hash nilainya, sehingga
+                // yang tersimpan di DB hanyalah hash + prefix-nya.
                 Forms\Components\Hidden::make('key')
                     ->default(fn () => 'novacms_'.Str::random(40)),
             ]);
@@ -57,9 +59,10 @@ class ApiKeyResource extends Resource
                 Tables\Columns\TextColumn::make('website.domain')
                     ->label('Website'),
 
-                // Hanya tampilkan 12 karakter pertama + elipsis — kunci
-                // penuh tidak boleh terbaca di UI.
-                Tables\Columns\TextColumn::make('key')
+                // Hanya tampilkan prefix (8 karakter pertama plaintext) +
+                // elipsis — hash penuh tidak berguna dan tidak boleh
+                // terbaca di UI.
+                Tables\Columns\TextColumn::make('key_prefix')
                     ->label('Kunci')
                     ->formatStateUsing(fn (string $state): string => Str::limit($state, 16))
                     ->copyable()

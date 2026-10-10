@@ -33,7 +33,7 @@ class ApiTenantIsolationTest extends TestCase
         $this->useApiKey();
 
         $this->otherWebsite = Website::factory()->create();
-        $this->otherApiKey = ApiKey::factory()->create([
+        $this->otherApiKey = ApiKey::factory()->withPlainText()->create([
             'website_id' => $this->otherWebsite->id,
         ]);
     }
@@ -213,7 +213,7 @@ class ApiTenantIsolationTest extends TestCase
             'author_id' => User::factory()->create()->id,
         ]);
 
-        $this->withHeader('Authorization', "Bearer {$this->otherApiKey->key}");
+        $this->withHeader('Authorization', "Bearer {$this->otherApiKey->plain_text_key}");
 
         $this->getJson('/api/v1/posts')
             ->assertOk()

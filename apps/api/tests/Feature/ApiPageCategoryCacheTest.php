@@ -92,7 +92,7 @@ class ApiPageCategoryCacheTest extends TestCase
     public function test_cache_pages_terpisah_per_website(): void
     {
         $otherWebsite = Website::factory()->create();
-        $otherKey = ApiKey::factory()->create(['website_id' => $otherWebsite->id]);
+        $otherKey = ApiKey::factory()->withPlainText()->create(['website_id' => $otherWebsite->id]);
 
         // Cache website sendiri.
         $this->getJson('/api/v1/pages')->assertOk();
@@ -101,7 +101,7 @@ class ApiPageCategoryCacheTest extends TestCase
         // Website lain belum di-cache.
         $this->assertFalse(Cache::has("api.pages.index.{$otherWebsite->id}.1"));
 
-        $this->withHeader('Authorization', "Bearer {$otherKey->key}");
+        $this->withHeader('Authorization', "Bearer {$otherKey->plain_text_key}");
         $this->getJson('/api/v1/pages')->assertOk();
         $this->assertTrue(Cache::has("api.pages.index.{$otherWebsite->id}.1"));
     }
@@ -147,13 +147,13 @@ class ApiPageCategoryCacheTest extends TestCase
     public function test_cache_categories_tidak_bocor_antara_tenant(): void
     {
         $otherWebsite = Website::factory()->create();
-        $otherKey = ApiKey::factory()->create(['website_id' => $otherWebsite->id]);
+        $otherKey = ApiKey::factory()->withPlainText()->create(['website_id' => $otherWebsite->id]);
 
         $this->getJson('/api/v1/categories')->assertOk();
         $this->assertTrue(Cache::has("api.categories.index.{$this->website->id}"));
         $this->assertFalse(Cache::has("api.categories.index.{$otherWebsite->id}"));
 
-        $this->withHeader('Authorization', "Bearer {$otherKey->key}");
+        $this->withHeader('Authorization', "Bearer {$otherKey->plain_text_key}");
         $this->getJson('/api/v1/categories')->assertOk();
         $this->assertTrue(Cache::has("api.categories.index.{$otherWebsite->id}"));
     }

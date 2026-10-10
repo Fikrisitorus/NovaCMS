@@ -1,6 +1,6 @@
 # Dokumentasi API Publik v1
 
-**Tanggal Update Terakhir:** 9 Oktober 2026
+**Tanggal Update Terakhir:** 11 Oktober 2026
 
 > **Wajib dibaca oleh:** Frontend Developer, Mobile Developer, dan Backend Developer.
 > Dokumen ini adalah *contract* resmi endpoint publik NovaCMS. Setiap perubahan `request`/`response` di backend **wajib** diperbarui di sini.
@@ -92,6 +92,8 @@ curl -sS "http://localhost:8000/api/v1/posts?api_key=novacms_xxxxxxxxxxxxxxxxxxx
 ```
 
 Kunci berformat `novacms_<random 40 karakter>` dan disimpan di tabel `api_keys`. Satu website bisa memiliki banyak kunci — mis. terpisah untuk *production* dan *staging* — dan masing-masing dapat **dicabut** (`revoked_at`) tanpa menghapus baris, sehingga audit trail tetap utuh. Mencabut kunci seketika memutus akses frontend yang memakainya.
+
+> 🔒 **Kunci disimpan sebagai hash.** Kolom `api_keys.key` berisi *hash* bcrypt dari plaintext — bukan plaintext itu sendiri — persis seperti password user. Yang bisa dibaca dari DB hanyalah `key_prefix` (8 karakter pertama plaintext, selalu `novacms_`) yang dipakai untuk mempersempit kandidat saat *lookup*. Konsekuensinya: plaintext **tidak bisa dipulihkan** dari database dalam keadaan apa pun, termasuk oleh admin — hanya diketahui pemilik kunci yang menyimpannya saat pertama dibuat.
 
 **Membuat kunci** (admin panel → *Kunci API* → *Buat kunci API*, atau CLI):
 
@@ -677,12 +679,12 @@ Format *error response* mengikuti *default* Laravel:
 
 ## ⚠️ Gap & Catatan Implementasi
 
-Hal-hal yang **belum ada** di API publik per 9 Oktober 2026, agar *consumer* tidak berharap lebih:
+Hal-hal yang **belum ada** di API publik per 11 Oktober 2026, agar *consumer* tidak berharap lebih:
 
 1. **Belum ada endpoint untuk `seoMeta` mandiri** dan `websites/{id}` — SEO meta sudah ikut di response post/page, tapi belum ada endpoint khusus.
 2. **Pencarian belum *full-text*.** `?q=` memakai `LIKE %q%` — substring match, bukan relevansi/typo-tolerant. Upgrade ke Meilisearch/Scout ada di roadmap.
 3. **Tidak ada dokumentasi OpenAPI/Swagger** maupun koleksi Postman; dokumen ini satu-satunya *contract*.
-4. **Kunci API disimpan plaintext** di tabel `api_keys`. Saat ini aman karena DB berada di infrastruktur yang dikontrol penuh, tapi *hashing* (mis. *hash:* `Hash::make` + lookup atas hash) adalah langkah pengerasan berikutnya.
+4. ~~**Kunci API disimpan plaintext** di tabel `api_keys`.~~ ✅ **Sudah diatasi** (11 Oktober 2026): kolom `key` sekarang menyimpan *hash* bcrypt, dengan kolom `key_prefix` (8 karakter pertama plaintext) sebagai pintu *lookup* sebelum verifikasi via `Hash::check`. Plaintext lama di-hash saat migrasi dan tidak bisa dipulihkan; lihat [🔐 Autentikasi & Rate Limit](#-autentikasi--rate-limit).
 
 ---
 
@@ -696,7 +698,7 @@ Regresi seluruh perilaku di atas dilindungi oleh *test suite* `apps/api/tests/Fe
 | `ApiPublicEndpointsTest`          | Relasi & paginasi `PostResource`, `posts_count` kategori, field internal media tidak di-expose. |
 | `ApiPostCacheTest`                | Cache `GET /posts` diisi dan ter-invalidate saat post disimpan/dihapus. |
 | `ApiSearchTest`                   | `?q=` pada post (title/content), case-insensitive, tidak tembus *draft*, `?q=` kosong = semua. |
-| `ApiKeyMiddlewareTest`            | 401 tanpa kunci, 200 via header/query, header `X-RateLimit-*`, 429 saat lewat batas, revoke → 401. |
+| `ApiKeyMiddlewareTest`            | 401 tanpa kunci, 200 via header/query, header `X-RateLimit-*`, 429 saat lewat batas, revoke → 401, kunci disimpan sebagai hash + lookup prefix. |
 | `ApiTenantIsolationTest`          | Data tenant lain tidak muncul di posts/pages/media/categories, domain lain → 404, website nonaktif → 403. |
 | `ApiPaginationTest`               | Paginasi `GET /pages` & `GET /websites` (meta current_page/per_page/total, 15/halaman) + isolasi tenant tetap utuh. |
 | `RevisionTest`                    | Versi konten: update → revision baru, restore mengembalikan konten lama, `user_id` tercatat. |
